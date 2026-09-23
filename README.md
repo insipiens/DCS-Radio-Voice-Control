@@ -16,6 +16,8 @@ DCS Radio Voice Control operates the live DCS radio menu by voice. Hold push-to-
 
 Requires Windows 11 x64 and DCS World.
 
+**[Download the development installer (Windows EXE)](https://github.com/insipiens/DCS-Radio-Voice-Control/releases/download/development-installer/DCS-Radio-Voice-Control-Setup.exe)**
+
 1. Close DCS and DCS Radio Voice Control.
 2. Run `DCS-Radio-Voice-Control-Setup.exe`.
 3. Read the DCS integration notice and choose **Install**.
@@ -54,7 +56,7 @@ Open **Start > DCS Radio Voice Control > Configure DCS Radio Voice Control**. Co
 
 ## Updating
 
-Close DRVC and run the newer Setup EXE. The stable installer identity updates the existing installation in place. Valid unchanged runtime, Whisper and Piper components are reused; configuration, PTT settings and aliases are preserved.
+Close DRVC and [download the current development Setup EXE](https://github.com/insipiens/DCS-Radio-Voice-Control/releases/download/development-installer/DCS-Radio-Voice-Control-Setup.exe), then run it. The stable installer identity updates the existing installation in place. Valid unchanged runtime, Whisper and Piper components are reused; configuration, PTT settings and aliases are preserved.
 
 ## Repair
 
