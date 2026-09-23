@@ -61,7 +61,10 @@ jobs:
           }
           $app = Join-Path $env:LOCALAPPDATA 'Programs\DCS Radio Voice Control'
           $components = Start-Process -FilePath (Join-Path $app 'setup.bat') -Wait -PassThru
-          if ($components.ExitCode -ne 0) { throw "Installed component reconciliation failed with exit code $($components.ExitCode)." }
+          if ($components.ExitCode -ne 0) {
+            Get-Content -LiteralPath (Join-Path $env:LOCALAPPDATA 'DCSRadioVoiceControl\logs\installer-components.log') -ErrorAction SilentlyContinue
+            throw "Installed component reconciliation failed with exit code $($components.ExitCode)."
+          }
           & (Join-Path $app 'runtime\python.exe') -c 'import dcs_radio_voice_control.tray'
           if ($LASTEXITCODE -ne 0) { throw 'Installed notification-area controller could not be imported.' }
           $status = & (Join-Path $app 'runtime\python.exe') (Join-Path $app 'tools\install.py') status --dcs-install $dcs --saved-games $savedGames | ConvertFrom-Json
