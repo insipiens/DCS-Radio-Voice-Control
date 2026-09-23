@@ -16,6 +16,7 @@ ArchitecturesAllowed=x64compatible
 MinVersion=10.0.22000
 CloseApplications=no
 RestartApplications=no
+AppMutex=Local\DCSRadioVoiceControlController
 RestartIfNeededByRun=no
 UsePreviousAppDir=yes
 UsePreviousTasks=yes
@@ -26,7 +27,7 @@ OutputDir=..\dist
 OutputBaseFilename=DCS-Radio-Voice-Control-Setup
 LicenseFile=..\LICENSE
 InfoBeforeFile=BEFORE_INSTALL.txt
-AppModifyPath={app}\configuration.bat
+AppModifyPath="{app}\configuration.bat"
 UninstallDisplayName=DCS Radio Voice Control
 
 [Files]
