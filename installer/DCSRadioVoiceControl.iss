@@ -84,7 +84,12 @@ begin
     ewWaitUntilTerminated, ResultCode) then
     RaiseException(Description + ' could not be started: ' + SysErrorMessage(ResultCode));
   if ResultCode <> 0 then
+  begin
+    if Filename = ExpandConstant('{app}\setup.bat') then
+      RaiseException(Description + ' failed with exit code ' + IntToStr(ResultCode) + '. Details: ' +
+        ExpandConstant('{localappdata}\DCSRadioVoiceControl\logs\installer-components.log'));
     RaiseException(Description + ' failed with exit code ' + IntToStr(ResultCode) + '.');
+  end;
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
