@@ -26,6 +26,7 @@ from dcs_radio_voice_control.voice_command_test import (
     contextual_catalogue,
     control_live_menu,
     execution_candidate,
+    execution_match_for_context,
     remember_catalogue,
     unavailable_candidate,
     visible_path_after_menu_control,
@@ -316,6 +317,67 @@ class MatcherTests(unittest.TestCase):
         scoped = contextual_catalogue(ITEMS + (menu,), ("ATC", "Biggin Hill"))
         self.assertTrue(scoped)
         self.assertTrue(all(item.executable for item in scoped))
+
+    def test_direct_command_overrides_guided_menu_context(self) -> None:
+        match, candidate, direct = execution_match_for_context(
+            "Wingman, break left",
+            ITEMS,
+            (),
+            None,
+        )
+        self.assertEqual(match.status, "matched")
+        self.assertIsNotNone(candidate)
+        self.assertTrue(direct)
+        self.assertEqual(candidate.item.action_id, "radio.1.4.2")  # type: ignore[union-attr]
+
+    def test_guided_context_remains_fallback_for_ambiguous_leaf(self) -> None:
+        match, candidate, direct = execution_match_for_context(
+            "Break left",
+            ITEMS,
+            ("Wingman", "Maneuvers"),
+            None,
+        )
+        self.assertEqual(match.status, "matched")
+        self.assertIsNotNone(candidate)
+        self.assertFalse(direct)
+        self.assertEqual(candidate.item.action_id, "radio.1.4.2")  # type: ignore[union-attr]
+
+    def test_recipient_and_action_aliases_override_guided_menu_context(self) -> None:
+        alias_items = ITEMS + (
+            MenuItem(
+                "radio.1.9",
+                "Rejoin Formation",
+                ("Wingman", "Rejoin Formation"),
+            ),
+            MenuItem(
+                "radio.2.9",
+                "Rejoin Formation",
+                ("Flight", "Rejoin Formation"),
+            ),
+        )
+        aliases = {
+            "two": "Wingman",
+            "join up": "Rejoin Formation",
+        }
+        with patch(
+            "dcs_radio_voice_control.matcher.reviewed_aliases",
+            return_value=aliases,
+        ), patch(
+            "dcs_radio_voice_control.voice_command_test.reviewed_alias",
+            return_value=None,
+        ):
+            recipient, action_alias = action_alias_for_transcript("Two, join up")
+            match, candidate, direct = execution_match_for_context(
+                "Two, join up",
+                alias_items,
+                (),
+                action_alias,
+            )
+        self.assertEqual(recipient.scope, "wingman")  # type: ignore[union-attr]
+        self.assertEqual(match.status, "matched")
+        self.assertIsNotNone(candidate)
+        self.assertTrue(direct)
+        self.assertEqual(candidate.item.action_id, "radio.1.9")  # type: ignore[union-attr]
 
     def test_menu_controls_update_only_known_visual_context(self) -> None:
         self.assertEqual(

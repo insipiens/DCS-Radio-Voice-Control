@@ -113,6 +113,52 @@ def contextual_catalogue(
     )
 
 
+def execution_match_for_context(
+    transcript: str,
+    items: tuple[MenuItem, ...],
+    visible_path: tuple[str, ...] | None,
+    action_alias: str | None,
+    *,
+    minimum_score: float = MINIMUM_EXECUTION_SCORE,
+    minimum_lead: float = MINIMUM_EXECUTION_LEAD,
+) -> tuple[MatchResult, RankedMatch | None, bool]:
+    """Prefer a safe global direct command over guided-menu context.
+
+    The displayed menu is only a fallback disambiguation context.  If the
+    utterance already identifies an executable command in the full live
+    catalogue, it remains a direct command even while guided mode is open.
+    """
+    live_actions = executable_catalogue(items)
+    direct_match = (
+        match_reviewed_alias(action_alias, live_actions)
+        if action_alias is not None
+        else match_catalogue(transcript, live_actions)
+    )
+    direct_candidate = execution_candidate(
+        direct_match,
+        minimum_score=minimum_score,
+        minimum_lead=minimum_lead,
+    )
+    if direct_candidate is not None or visible_path is None:
+        return direct_match, direct_candidate, direct_candidate is not None
+
+    guided_actions = contextual_catalogue(items, visible_path)
+    guided_match = (
+        match_reviewed_alias(action_alias, guided_actions)
+        if action_alias is not None
+        else match_catalogue(transcript, guided_actions)
+    )
+    return (
+        guided_match,
+        execution_candidate(
+            guided_match,
+            minimum_score=minimum_score,
+            minimum_lead=minimum_lead,
+        ),
+        False,
+    )
+
+
 def open_live_menu(
     client: DcsMenuClient,
     snapshot: MenuSnapshot,
@@ -692,7 +738,20 @@ def main(argv: Sequence[str] | None = None) -> int:
                         revision=snapshot.revision,
                     )
 
-                if visible_menu_path is not None and action_alias is None:
+                match, candidate, direct_execution = execution_match_for_context(
+                    transcript,
+                    snapshot.items,
+                    visible_menu_path,
+                    action_alias,
+                    minimum_score=minimum_score,
+                    minimum_lead=minimum_lead,
+                )
+
+                if (
+                    visible_menu_path is not None
+                    and not direct_execution
+                    and action_alias is None
+                ):
                     navigation = resolve_menu_navigation(
                         snapshot.items,
                         transcript,
@@ -742,18 +801,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                         continue
 
                 live_actions = executable_catalogue(snapshot.items)
-                scoped_actions = contextual_catalogue(snapshot.items, visible_menu_path)
                 match_transcript = action_alias or transcript
-                match = (
-                    match_reviewed_alias(action_alias, scoped_actions)
-                    if action_alias is not None
-                    else match_catalogue(transcript, scoped_actions)
-                )
-                candidate = execution_candidate(
-                    match,
-                    minimum_score=minimum_score,
-                    minimum_lead=minimum_lead,
-                )
                 ranked = [
                     {
                         "action_id": ranked_match.item.action_id,
@@ -862,7 +910,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     )
                     continue
                 last_demand_key = demand_key
-                guided_execution = visible_menu_path is not None
+                guided_execution = visible_menu_path is not None and not direct_execution
                 _print_result(match)
                 write_event(
                     "command_sent",
@@ -900,8 +948,16 @@ def main(argv: Sequence[str] | None = None) -> int:
                     retry_candidate = None
                     if refreshed is not None:
                         remember_catalogue(known_items, refreshed.items)
-                        retry_items = contextual_catalogue(refreshed.items, visible_menu_path)
-                        retry_match = match_catalogue(transcript, retry_items)
+                        retry_items = (
+                            executable_catalogue(refreshed.items)
+                            if direct_execution
+                            else contextual_catalogue(refreshed.items, visible_menu_path)
+                        )
+                        retry_match = (
+                            match_reviewed_alias(action_alias, retry_items)
+                            if action_alias is not None
+                            else match_catalogue(transcript, retry_items)
+                        )
                         possible_retry = execution_candidate(
                             retry_match,
                             minimum_score=minimum_score,
