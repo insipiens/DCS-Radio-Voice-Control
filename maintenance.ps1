@@ -134,6 +134,30 @@ function Get-SttStatus {
     return Component "stt" "current" "whisper.cpp $WhisperVersion / $($Desired.compute) / $($Desired.model)"
 }
 
+function Test-Piper([string]$Path) {
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $false }
+    $StartInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $StartInfo.FileName = $Path
+    $StartInfo.Arguments = "--help"
+    $StartInfo.UseShellExecute = $false
+    $StartInfo.RedirectStandardOutput = $true
+    $StartInfo.RedirectStandardError = $true
+    $StartInfo.CreateNoWindow = $true
+    $Process = New-Object System.Diagnostics.Process
+    $Process.StartInfo = $StartInfo
+    try {
+        if (-not $Process.Start()) { return $false }
+        $StandardOutput = $Process.StandardOutput.ReadToEndAsync()
+        $StandardError = $Process.StandardError.ReadToEndAsync()
+        $Process.WaitForExit()
+        $null = $StandardOutput.Result
+        $null = $StandardError.Result
+        return $Process.ExitCode -eq 0
+    }
+    catch { return $false }
+    finally { $Process.Dispose() }
+}
+
 function Get-TtsStatus {
     $Dir = Join-Path $Root "tools\piper"
     $Exe = Join-Path $Dir "piper\piper.exe"
@@ -158,6 +182,9 @@ function Get-TtsStatus {
     if ((Get-FileHash -LiteralPath $Model -Algorithm MD5).Hash.ToLowerInvariant() -ne $VoiceModelMd5 -or
         (Get-FileHash -LiteralPath $Config -Algorithm MD5).Hash.ToLowerInvariant() -ne $VoiceConfigMd5) {
         return Component "tts" "repair_required" "Alan voice files failed their published checks."
+    }
+    if (-not (Test-Piper $Exe)) {
+        return Component "tts" "repair_required" "Piper executable self-test failed."
     }
     return Component "tts" "current" "Piper $PiperRelease / en_GB-alan-medium"
 }
