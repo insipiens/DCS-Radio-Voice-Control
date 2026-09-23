@@ -167,6 +167,12 @@ class CommandReferenceTests(unittest.TestCase):
         self.assertEqual(navigation.menu_id, "menu.10")
         self.assertEqual(navigation.path, ("Other",))
 
+    def test_show_function_key_resolves_absolute_root_slot(self) -> None:
+        navigation = resolve_menu_navigation(NAVIGATION_ITEMS, "F5")
+        self.assertEqual(navigation.status, "found")
+        self.assertEqual(navigation.menu_id, "menu.5")
+        self.assertEqual(navigation.path, ("ATC",))
+
     def test_show_nested_menu_resolves_globally(self) -> None:
         navigation = resolve_menu_navigation(NAVIGATION_ITEMS, "Ford")
         self.assertEqual(navigation.menu_id, "menu.5.1")

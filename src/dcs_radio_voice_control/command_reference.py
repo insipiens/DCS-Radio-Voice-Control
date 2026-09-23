@@ -233,6 +233,25 @@ def resolve_menu_navigation(
 
     menu_items = tuple(item for item in items if not item.executable)
     wanted = _compact(requested_node)
+
+    # "Show F<n>" is an absolute visual destination, not a selection of the
+    # currently displayed menu.  Bare F1-F10 remains the relative guided
+    # selection syntax handled by parse_function_key()/function_key_item().
+    show_slot_match = re.fullmatch(r"f(10|[1-9])", wanted)
+    if current_path is None and show_slot_match is not None:
+        slot = int(show_slot_match.group(1))
+        slot_matches = tuple(
+            item for item in menu_items if len(item.path) == 1 and item.slot == slot
+        )
+        if len(slot_matches) == 1:
+            item = slot_matches[0]
+            return MenuNavigation("found", item.action_id, item.path)
+        if len(slot_matches) > 1:
+            return MenuNavigation(
+                "ambiguous",
+                choices=tuple(_display_path(item.path) for item in slot_matches),
+            )
+
     f10_request = wanted in _F10_REQUESTS
     if current_path is not None:
         candidates = tuple(

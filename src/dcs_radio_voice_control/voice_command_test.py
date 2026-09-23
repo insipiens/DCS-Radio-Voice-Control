@@ -194,6 +194,32 @@ def open_live_menu(
     return refreshed_navigation, refreshed, client.wait_for_result(request_id)
 
 
+def show_live_menu(
+    client: DcsMenuClient,
+    snapshot: MenuSnapshot,
+    requested_node: str | None,
+    visible_path: tuple[str, ...] | None,
+) -> tuple[MenuNavigation, MenuSnapshot, ActionResult | None]:
+    """Open an absolute Show destination, independent of guided-menu depth."""
+    navigation = resolve_menu_navigation(snapshot.items, requested_node)
+    if (
+        visible_path is not None
+        and navigation.status == "found"
+        and navigation.path == visible_path
+    ):
+        return (
+            navigation,
+            snapshot,
+            ActionResult(
+                "local",
+                True,
+                "menu_already_visible",
+                "The requested menu is already shown",
+            ),
+        )
+    return open_live_menu(client, snapshot, requested_node)
+
+
 def select_visible_item(
     client: DcsMenuClient,
     snapshot: MenuSnapshot,
@@ -508,70 +534,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                         continue
 
                     if meta.kind == "show":
-                        if visible_menu_path is None:
-                            navigation, snapshot, result = open_live_menu(
-                                client,
-                                snapshot,
-                                meta.node,
-                            )
-                        else:
-                            if meta.node is None:
-                                navigation = MenuNavigation(
-                                    "found",
-                                    "menu.root" if not visible_menu_path else None,
-                                    visible_menu_path,
-                                )
-                                result = ActionResult(
-                                    "local",
-                                    True,
-                                    "menu_already_visible",
-                                    "A guided menu is already visible",
-                                )
-                            else:
-                                navigation = resolve_menu_navigation(
-                                    snapshot.items,
-                                    meta.node,
-                                    current_path=visible_menu_path,
-                                )
-                                result = None
-                                if navigation.status == "leaf":
-                                    result = ActionResult(
-                                        "local",
-                                        True,
-                                        "command_visible",
-                                        "The requested command is on the displayed menu",
-                                    )
-                            if (
-                                meta.node is not None
-                                and navigation.status == "found"
-                                and navigation.menu_id is not None
-                                and navigation.path != visible_menu_path
-                            ):
-                                target = next(
-                                    (
-                                        item
-                                        for item in snapshot.items
-                                        if item.action_id == navigation.menu_id
-                                    ),
-                                    None,
-                                )
-                                if target is not None:
-                                    snapshot, result = select_visible_item(
-                                        client,
-                                        snapshot,
-                                        target,
-                                    )
-                            elif (
-                                meta.node is not None
-                                and navigation.status == "found"
-                                and navigation.path == visible_menu_path
-                            ):
-                                result = ActionResult(
-                                    "local",
-                                    True,
-                                    "menu_already_visible",
-                                    "The requested command is already shown",
-                                )
+                        navigation, snapshot, result = show_live_menu(
+                            client,
+                            snapshot,
+                            meta.node,
+                            visible_menu_path,
+                        )
                         remember_catalogue(known_items, snapshot.items)
                         if result is not None and result.accepted:
                             visible_menu_path = navigation.path

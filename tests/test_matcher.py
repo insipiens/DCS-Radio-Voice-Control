@@ -28,6 +28,7 @@ from dcs_radio_voice_control.voice_command_test import (
     execution_candidate,
     execution_match_for_context,
     remember_catalogue,
+    show_live_menu,
     unavailable_candidate,
     visible_path_after_menu_control,
     wait_for_catalogue,
@@ -378,6 +379,55 @@ class MatcherTests(unittest.TestCase):
         self.assertIsNotNone(candidate)
         self.assertTrue(direct)
         self.assertEqual(candidate.item.action_id, "radio.1.9")  # type: ignore[union-attr]
+
+    def test_show_destination_ignores_current_guided_branch(self) -> None:
+        menu_items = ITEMS + (
+            MenuItem("menu.5", "ATC", ("ATC",), False, slot=5),
+            MenuItem("menu.10", "Other", ("Other",), False, slot=10),
+        )
+        snapshot = MenuSnapshot(3, menu_items)
+
+        class ShowClient:
+            def __init__(self) -> None:
+                self.opened: list[tuple[str, int]] = []
+
+            def open_menu(self, menu_id: str, revision: int) -> str:
+                self.opened.append((menu_id, revision))
+                return "show"
+
+            def wait_for_result(self, _request_id: str) -> ActionResult:
+                return ActionResult("show", True, "menu_opened", "")
+
+        client = ShowClient()
+        navigation, _, result = show_live_menu(
+            client,  # type: ignore[arg-type]
+            snapshot,
+            "ATC",
+            ("Other",),
+        )
+        self.assertEqual(navigation.path, ("ATC",))
+        self.assertEqual(client.opened, [("menu.5", 3)])
+        self.assertTrue(result.accepted)  # type: ignore[union-attr]
+
+    def test_show_current_menu_is_an_absolute_noop(self) -> None:
+        menu_items = ITEMS + (
+            MenuItem("menu.5", "ATC", ("ATC",), False, slot=5),
+        )
+        snapshot = MenuSnapshot(3, menu_items)
+
+        class ShowClient:
+            def open_menu(self, _menu_id: str, _revision: int) -> str:
+                raise AssertionError("already-visible Show must not call DCS")
+
+        navigation, _, result = show_live_menu(
+            ShowClient(),  # type: ignore[arg-type]
+            snapshot,
+            "ATC",
+            ("ATC",),
+        )
+        self.assertEqual(navigation.path, ("ATC",))
+        self.assertEqual(result.code, "menu_already_visible")  # type: ignore[union-attr]
+        self.assertTrue(result.accepted)  # type: ignore[union-attr]
 
     def test_menu_controls_update_only_known_visual_context(self) -> None:
         self.assertEqual(
