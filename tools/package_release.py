@@ -15,6 +15,7 @@ ROOT_FILES = (
     "README.md",
     "configuration.bat",
     "install.bat",
+    "maintenance.ps1",
     "run.bat",
     "setup-stt.bat",
     "setup-stt.ps1",
@@ -30,6 +31,7 @@ TREE_PATTERNS = (
     "tools/__init__.py",
     "tools/build_radio_overlay.py",
     "tools/install.py",
+    "tools/purge-local.ps1",
 )
 ZIP_TIMESTAMP = (2026, 1, 1, 0, 0, 0)
 ARCHIVE_ROOT = "DCS-Radio-Voice-Control"

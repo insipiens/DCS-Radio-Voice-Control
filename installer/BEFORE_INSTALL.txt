@@ -1,0 +1,10 @@
+DCS Radio Voice Control installs only for your Windows user account.
+
+It does not install Windows services, drivers, system DLLs, or change the system PATH.
+
+To work with DCS, it must modify one DCS radio-menu file:
+Scripts\UI\RadioCommandDialogPanel\RadioCommandDialogsPanel.lua
+
+The original file is verified and backed up before replacement. Windows administrator approval is requested only when that protected DCS file actually needs to be installed or updated. If the file is in an unexpected state, installation stops rather than overwriting it.
+
+Click Install only if you want DCS Radio Voice Control to make this DCS integration change.

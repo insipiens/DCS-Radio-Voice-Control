@@ -53,7 +53,7 @@ Uninstall must never restore an old backup over a DCS file that has subsequently
 
 ## Updates and repair
 
-DRVC has one stable installer identity. A newer installer updates the existing per-user installation rather than creating another copy.
+DRVC has one stable Inno Setup AppId. A newer installer updates the existing per-user installation rather than creating another copy.
 
 Component maintenance follows:
 

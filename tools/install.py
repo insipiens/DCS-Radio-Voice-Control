@@ -730,6 +730,11 @@ def main() -> int:
                 action="store_true",
                 help="remove Saved Games state, local settings, logs, and backups",
             )
+            command_parser.add_argument(
+                "--remove-state",
+                action="store_true",
+                help="remove verified Saved Games integration state but preserve user settings",
+            )
             command_parser.add_argument("--elevated", action="store_true", help=argparse.SUPPRESS)
             command_parser.add_argument("--result-file", type=Path, help=argparse.SUPPRESS)
 
@@ -737,6 +742,20 @@ def main() -> int:
     try:
         saved_games = discover_saved_games(args.saved_games)
         dcs_install = discover_dcs_install(args.dcs_install)
+        if args.command == "install" and not args.elevated:
+            preflight = installation_preflight(dcs_install, saved_games, args.hook)
+            if preflight.get("state") == "current":
+                save_installation_state(
+                    Path(__file__).resolve().parents[1],
+                    dcs_install,
+                    saved_games,
+                )
+                result = dict(preflight)
+                result["outcome"] = "already_current"
+                _emit_result(json.dumps(result, indent=2, sort_keys=True), None)
+                return 0
+            if preflight.get("state") == "repair_required":
+                raise InstallError(preflight.get("detail", "DCS integration requires repair"))
         if args.command in ("install", "uninstall") and os.name == "nt":
             if not args.elevated:
                 if not _is_windows_administrator():
@@ -770,6 +789,17 @@ def main() -> int:
                 )
             else:
                 result = uninstall_hook(dcs_install, saved_games)
+                if args.remove_state:
+                    state_directory = saved_games.resolve() / STATE_DIRECTORY
+                    active_target = dcs_install.resolve() / RELATIVE_PANEL
+                    if active_target.is_file() and BEGIN_MARKER in active_target.read_bytes():
+                        raise InstallError(
+                            "DCS Radio Voice Control remains in the active DCS panel; "
+                            "refusing to remove its integration state"
+                        )
+                    if state_directory.exists():
+                        shutil.rmtree(state_directory)
+                    result["removed_state"] = str(state_directory)
         else:
             result = installation_status(dcs_install, saved_games)
     except (InstallError, FileNotFoundError, PermissionError, ValueError) as exc:
