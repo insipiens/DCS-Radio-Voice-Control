@@ -8,8 +8,10 @@ $Zip = Join-Path $PiperDir 'piper_windows_amd64.zip'
 $PiperExe = Join-Path $PiperDir 'piper\piper.exe'
 $Model = Join-Path $ModelDir 'en_GB-alan-medium.onnx'
 $Config = "$Model.json"
+$Manifest = Join-Path $PiperDir 'dcs_radio_voice_control-tts.json'
+$PiperRelease = '2023.11.14-2'
 
-$PiperUrl = 'https://github.com/rhasspy/piper/releases/download/2023.11.14-2/piper_windows_amd64.zip'
+$PiperUrl = "https://github.com/rhasspy/piper/releases/download/$PiperRelease/piper_windows_amd64.zip"
 $VoiceRevision = 'b15880f5cbc33fcfc97938b1f72411dc770e5bc4'
 $VoiceBaseUrl = "https://huggingface.co/rhasspy/piper-voices/resolve/$VoiceRevision/en/en_GB/alan/medium"
 $ModelUrl = "$VoiceBaseUrl/en_GB-alan-medium.onnx?download=true"
@@ -49,6 +51,16 @@ if ((Get-Md5 $Config) -ne $ConfigMd5) {
 if (-not (Test-Path $PiperExe)) {
     throw "Piper executable was not found after extraction: $PiperExe"
 }
+
+[ordered]@{
+    schema = 1
+    piper_release = $PiperRelease
+    piper_source_url = $PiperUrl
+    voice_revision = $VoiceRevision
+    model_md5 = $ModelMd5
+    config_md5 = $ConfigMd5
+    configured_at = [DateTime]::UtcNow.ToString("o")
+} | ConvertTo-Json | Set-Content -LiteralPath $Manifest -Encoding UTF8
 
 Write-Host 'Piper TTS is ready.'
 Write-Host "Executable: $PiperExe"
