@@ -143,7 +143,9 @@ function Get-TtsStatus {
     if (-not (Test-Path -LiteralPath $Exe -PathType Leaf) -or $null -eq $Manifest) {
         return Component "tts" "missing" "Pinned Piper installation record is missing."
     }
-    if ($Manifest.piper_release -ne $PiperRelease -or
+    if ($Manifest.schema -ne 2 -or
+        $Manifest.piper_release -ne $PiperRelease -or
+        -not ($Manifest.piper_archive_sha256 -match "^[0-9a-f]{64}$") -or
         $Manifest.voice_revision -ne $VoiceRevision -or
         $Manifest.model_md5 -ne $VoiceModelMd5 -or
         $Manifest.config_md5 -ne $VoiceConfigMd5) {
