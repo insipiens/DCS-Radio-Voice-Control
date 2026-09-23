@@ -32,6 +32,7 @@ TREE_PATTERNS = (
     "tools/install.py",
 )
 ZIP_TIMESTAMP = (2026, 1, 1, 0, 0, 0)
+ARCHIVE_ROOT = "DCS-Radio-Voice-Control"
 
 
 def release_files(root: Path) -> tuple[Path, ...]:
@@ -56,7 +57,8 @@ def build_release(root: Path, output: Path) -> Path:
     ) as archive:
         for source in release_files(root):
             relative = source.relative_to(root).as_posix()
-            info = zipfile.ZipInfo(relative, ZIP_TIMESTAMP)
+            archive_name = f"{ARCHIVE_ROOT}/{relative}"
+            info = zipfile.ZipInfo(archive_name, ZIP_TIMESTAMP)
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = 0o100644 << 16
             archive.writestr(info, source.read_bytes(), compresslevel=9)

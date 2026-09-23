@@ -26,33 +26,45 @@ Speech recognition runs locally on your PC. Recorded speech is not sent to a clo
 
 Requires Windows 11 x64 and DCS World.
 
-1. Download and extract `DCS-Radio-Voice-Control.zip` to a permanent folder in your Windows user directory, for example:
+1. Download `DCS-Radio-Voice-Control.zip`.
+
+2. Open your **Downloads** folder, right-click `DCS-Radio-Voice-Control.zip` and select **Extract All**.
+
+3. Choose your Windows user folder as the destination, for example:
+
+   `C:\Users\your-name`
+
+   Windows will create:
 
    `C:\Users\your-name\DCS-Radio-Voice-Control`
 
-   Do not install it in `Program Files` or run it directly from the ZIP. Keep this folder after installation — it is the application folder.
+4. Open the new `DCS-Radio-Voice-Control` folder.
 
-2. Open the extracted `DCS-Radio-Voice-Control` folder and run:
+5. Right-click an empty area inside the folder and select **Open in Terminal**. This opens a PowerShell terminal in the correct folder.
+
+6. Type:
 
    ```powershell
    .\install.bat
    ```
 
-3. Configure your microphone, audio and push-to-talk:
+   and press **Enter**. Wait for the installation to complete.
+
+7. Configure your microphone, audio output and push-to-talk:
 
    ```powershell
    .\configuration.bat
    ```
 
-4. Start DCS Radio Voice Control:
+8. Start DCS Radio Voice Control:
 
    ```powershell
    .\run.bat
    ```
 
-5. Start DCS and enter a mission.
+9. Start DCS and enter a mission.
 
-For a step-by-step installation guide, non-standard DCS locations and troubleshooting, see [INSTALLATION.md](INSTALLATION.md).
+For more detailed installation instructions, non-standard DCS locations and troubleshooting, see [INSTALLATION.md](INSTALLATION.md).
 
 ## Using DCS Radio Voice Control
 

@@ -12,7 +12,7 @@ ROOT = Path(__file__).parents[1]
 
 
 class ReleasePackageTests(unittest.TestCase):
-    def test_release_has_stable_root_layout_without_developer_utilities(self) -> None:
+    def test_release_has_single_application_folder_without_developer_utilities(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "DCS-Radio-Voice-Control.zip"
             build_release(ROOT, output)
@@ -20,6 +20,7 @@ class ReleasePackageTests(unittest.TestCase):
                 names = archive.namelist()
 
         self.assertEqual(len(names), len(set(names)))
+        prefix = "DCS-Radio-Voice-Control/"
         for required in (
             "INSTALLATION.md",
             "configuration.bat",
@@ -31,10 +32,10 @@ class ReleasePackageTests(unittest.TestCase):
             "tools/install.py",
             "uninstall.bat",
         ):
-            self.assertIn(required, names)
-        self.assertFalse(any(name.startswith("DCS-Radio-Voice-Control/") for name in names))
-        self.assertFalse(any(name.startswith("tests/") for name in names))
-        self.assertNotIn("tools/package_release.py", names)
+            self.assertIn(prefix + required, names)
+        self.assertTrue(all(name.startswith(prefix) for name in names))
+        self.assertFalse(any(name.startswith(prefix + "tests/") for name in names))
+        self.assertNotIn(prefix + "tools/package_release.py", names)
         for diagnostic in (
             "matching-test.bat",
             "microphone.bat",
@@ -43,7 +44,7 @@ class ReleasePackageTests(unittest.TestCase):
             "transcription-test.bat",
             "voice-command-test.bat",
         ):
-            self.assertNotIn(diagnostic, names)
+            self.assertNotIn(prefix + diagnostic, names)
 
 
 if __name__ == "__main__":
