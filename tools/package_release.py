@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Build the stable, end-user DCS Radio Voice Control ZIP."""
+"""Build the legacy developer/debug DCS Radio Voice Control ZIP.
+
+The supported end-user distribution is the Inno Setup executable built from
+installer/DCSRadioVoiceControl.iss.
+"""
 
 from __future__ import annotations
 
@@ -73,7 +77,7 @@ def main() -> int:
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("dist/DCS-Radio-Voice-Control.zip"),
+        default=Path("dist/DCS-Radio-Voice-Control-developer.zip"),
     )
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
