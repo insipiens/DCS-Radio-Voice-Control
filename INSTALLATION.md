@@ -123,35 +123,7 @@ Use `DCS.openbeta` instead of `DCS` in the Saved Games path if that is the folde
 Providing both paths is also the solution if DCS Radio Voice Control reports that it found more than one DCS
 installation or more than one Saved Games DCS folder.
 
-## 4. Verify the DCS hook
-
-Run:
-
-```powershell
-.\runtime\python.exe .\tools\install.py status
-```
-
-A healthy installation includes these values:
-
-```json
-{
-  "healthy": true,
-  "installed": true,
-  "recorded_file_intact": true,
-  "target_matches_selected_install": true
-}
-```
-
-There will be additional path and hash fields; that is normal. If `healthy` is `false`, do not
-manually replace the DCS Lua file. Keep the complete status output for troubleshooting.
-
-If you used explicit paths while installing, use the same options when checking status:
-
-```powershell
-.\runtime\python.exe .\tools\install.py status --dcs-install "D:\SteamLibrary\steamapps\common\DCSWorld" --saved-games "$env:USERPROFILE\Saved Games\DCS"
-```
-
-## 5. Configure your microphone, sound, and push-to-talk
+## 4. Configure your microphone, sound, and push-to-talk
 
 On a first installation, `install.bat` opens the local configuration page automatically. If you
 want to change the settings later, run:
@@ -181,7 +153,7 @@ When you open `configuration.bat` later, the button is **Save configuration** an
 start another controller. Configuration is stored at
 `%LOCALAPPDATA%\DCSRadioVoiceControl\config.json` and is retained during updates.
 
-## 6. Run DCS Radio Voice Control in DCS
+## 5. Run DCS Radio Voice Control in DCS
 
 1. After **Save configuration and start**, leave the Terminal window open. DCS Radio Voice Control
    is now running and waiting for DCS.
@@ -327,6 +299,17 @@ update changed the radio-panel file after DCS Radio Voice Control was installed,
 refused. In that case, do not force-copy the hook and do not uninstall immediately: an old
 backup may no longer be the correct file for the updated DCS version. Keep the error and status
 output and resolve the changed base file before continuing.
+
+## Advanced installation check
+
+If you need to verify the installed DCS hook manually, run:
+
+```powershell
+.\runtime\python.exe .\tools\install.py status
+```
+
+A healthy installation reports `"healthy": true`. If you installed DCS using explicit
+`--dcs-install` or `--saved-games` paths, supply the same paths to the status command.
 
 ## Optional speech models
 
