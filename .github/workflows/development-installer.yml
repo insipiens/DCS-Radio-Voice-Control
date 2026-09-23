@@ -64,6 +64,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Installed component reconciliation failed with exit code $LASTEXITCODE." }
           & (Join-Path $app 'runtime\python.exe') -c 'import dcs_radio_voice_control.tray'
           if ($LASTEXITCODE -ne 0) { throw 'Installed notification-area controller could not be imported.' }
+          & (Join-Path $app 'runtime\python.exe') (Join-Path $app 'tools\install.py') install --dcs-install $dcs --saved-games $savedGames
+          if ($LASTEXITCODE -ne 0) { throw 'Installed DCS integration command failed.' }
           $status = & (Join-Path $app 'runtime\python.exe') (Join-Path $app 'tools\install.py') status --dcs-install $dcs --saved-games $savedGames | ConvertFrom-Json
           if (-not $status.healthy) { throw 'DCS integration is not healthy after the installer smoke test.' }
           $componentStatus = & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File (Join-Path $app 'maintenance.ps1') -Action status | ConvertFrom-Json
