@@ -63,7 +63,7 @@ inspect -> stage -> verify -> replace -> verify
 
 `maintenance.ps1` is the installer-facing reconciliation entry point. It classifies the private runtime, Whisper and Piper/voice components as `current`, `missing`, `update_required` or `repair_required`, and invokes only the setup operation needed for a non-current component.
 
-Verified current components are left alone. Downloaded executable components use HTTPS and cryptographic verification before installation or execution. The legacy Piper release does not publish a digest through GitHub, so its archive is staged and self-tested but remains an installer blocker until its bytes can be independently pinned or bundled.
+Verified current components are left alone. Downloaded executable components use HTTPS and pinned cryptographic hashes before installation or execution.
 
 Repair reconciles DRVC-owned components with their expected state. It does not attempt to repair Windows or DCS generally.
 

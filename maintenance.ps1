@@ -23,6 +23,7 @@ $WhisperModels = @{
     "ggml-medium.en.bin" = "cc37e93478338ec7700281a7ac30a10128929eb8f427dda2e865faa8f6da4356"
 }
 $PiperRelease = "2023.11.14-2"
+$PiperSha256 = "f3c58906402b24f3a96d92145f58acba6d86c9b5db896d207f78dc80811efcea"
 $VoiceRevision = "b15880f5cbc33fcfc97938b1f72411dc770e5bc4"
 $VoiceModelMd5 = "8f6b35eeb8ef6269021c6cb6d2414c9b"
 $VoiceConfigMd5 = "b11d9afd0a8f5372c42a52fbd6e021d4"
@@ -169,7 +170,7 @@ function Get-TtsStatus {
     }
     if ($Manifest.schema -ne 2 -or
         $Manifest.piper_release -ne $PiperRelease -or
-        -not ($Manifest.piper_archive_sha256 -match "^[0-9a-f]{64}$") -or
+        $Manifest.piper_archive_sha256 -ne $PiperSha256 -or
         $Manifest.voice_revision -ne $VoiceRevision -or
         $Manifest.model_md5 -ne $VoiceModelMd5 -or
         $Manifest.config_md5 -ne $VoiceConfigMd5) {

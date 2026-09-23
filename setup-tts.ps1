@@ -11,6 +11,7 @@ $Config = "$Model.json"
 $Manifest = Join-Path $PiperDir 'dcs_radio_voice_control-tts.json'
 $PiperRelease = '2023.11.14-2'
 $PiperUrl = "https://github.com/rhasspy/piper/releases/download/$PiperRelease/piper_windows_amd64.zip"
+$PiperSha256 = 'f3c58906402b24f3a96d92145f58acba6d86c9b5db896d207f78dc80811efcea'
 $VoiceRevision = 'b15880f5cbc33fcfc97938b1f72411dc770e5bc4'
 $VoiceBaseUrl = "https://huggingface.co/rhasspy/piper-voices/resolve/$VoiceRevision/en/en_GB/alan/medium"
 $ModelUrl = "$VoiceBaseUrl/en_GB-alan-medium.onnx?download=true"
@@ -95,6 +96,9 @@ try {
         Write-Host 'Downloading the pinned standalone Piper Windows build...'
         Invoke-WebRequest -Uri $PiperUrl -OutFile $Zip -UseBasicParsing
         $ArchiveSha256 = (Get-FileHash -LiteralPath $Zip -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($ArchiveSha256 -ne $PiperSha256) {
+            throw "Piper archive hash mismatch. Expected $PiperSha256 but received $ArchiveSha256."
+        }
         Expand-Archive -LiteralPath $Zip -DestinationPath $Expanded
         $StagedPiper = Join-Path $Expanded 'piper'
         $StagedExe = Join-Path $StagedPiper 'piper.exe'
