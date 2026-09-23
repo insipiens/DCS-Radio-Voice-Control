@@ -16,7 +16,7 @@ Persistent user data:
 %LOCALAPPDATA%\DCSRadioVoiceControl\
 ```
 
-DRVC owns its application files, private dependencies, canonical shortcuts, startup registration and temporary files.
+DRVC owns its application files, private dependencies, installation record, canonical shortcuts, startup registration and temporary files.
 
 The user owns configuration, HOTAS/PTT settings and aliases. Updates and repair preserve them. Normal uninstall preserves them unless the user explicitly chooses to remove them.
 

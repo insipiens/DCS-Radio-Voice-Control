@@ -16,6 +16,7 @@ from typing import Callable, Iterator, Sequence
 
 from .configuration_store import load_document
 from .controller_state import get_state, set_state
+from .installation_state import load_installation_state, save_installation_state
 from .event_log import write_event
 from .stt import PROJECT_ROOT
 
@@ -37,6 +38,20 @@ def _installer_api():
 
 def resolve_installation() -> tuple[Path, Path]:
     install = _installer_api()
+    try:
+        state = load_installation_state()
+    except OSError:
+        state = {}
+    try:
+        dcs = Path(state["dcs_install"]).resolve()
+        saved = Path(state["saved_games"]).resolve()
+    except (KeyError, TypeError, ValueError):
+        pass
+    else:
+        manifest = saved / install.STATE_DIRECTORY / install.MANIFEST_NAME
+        if (dcs / install.RELATIVE_PANEL).is_file() and manifest.is_file():
+            return dcs, saved
+
     saved_candidates = [
         Path.home() / "Saved Games" / name for name in ("DCS", "DCS.openbeta")
     ]
@@ -51,9 +66,13 @@ def resolve_installation() -> tuple[Path, Path]:
         if (dcs / install.RELATIVE_PANEL).is_file():
             recorded.append((dcs.resolve(), saved.resolve()))
     if len(recorded) == 1:
-        return recorded[0]
+        dcs, saved = recorded[0]
+        save_installation_state(PROJECT_ROOT, dcs, saved)
+        return dcs, saved
+
     saved = install.discover_saved_games(None)
-    return install.discover_dcs_install(None), saved
+    dcs = install.discover_dcs_install(None)
+    return dcs, saved
 
 
 def preflight(dcs_install: Path, saved_games: Path) -> dict[str, object]:

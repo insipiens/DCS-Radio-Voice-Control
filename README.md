@@ -54,7 +54,7 @@ Requires Windows 11 x64 and DCS World.
 
 8. DCS Radio Voice Control will start and wait for DCS. Start DCS and enter a mission.
 
-For more detailed installation instructions, non-standard DCS locations and troubleshooting, see [INSTALLATION.md](INSTALLATION.md).
+For more detailed installation instructions, non-standard DCS locations and troubleshooting, see [INSTALLATION.md](INSTALLATION.md). A successful install remembers the DCS and Saved Games locations for later runs.
 
 ## Using DCS Radio Voice Control
 

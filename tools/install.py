@@ -18,10 +18,16 @@ from uuid import uuid4
 
 if not __package__:
     # The embeddable runtime uses an explicit _pth file and therefore does not add
-    # this script's directory automatically. Establish the repository root before
-    # importing the tools package.
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    # this script's directory automatically. Establish the repository paths before
+    # importing the application and tools packages.
+    project_root = Path(__file__).resolve().parents[1]
+    sys.path.insert(0, str(project_root))
+    sys.path.insert(0, str(project_root / "src"))
 
+from dcs_radio_voice_control.installation_state import (
+    load_installation_state,
+    save_installation_state,
+)
 from tools.build_radio_overlay import BEGIN_MARKER, LEGACY_BEGIN_MARKER, build_overlay
 
 RELATIVE_PANEL = Path("Scripts/UI/RadioCommandDialogPanel/RadioCommandDialogsPanel.lua")
@@ -381,6 +387,9 @@ def installation_preflight(
 def discover_saved_games(explicit: Path | None) -> Path:
     if explicit is not None:
         return explicit.resolve()
+    recorded = _recorded_path("saved_games")
+    if recorded is not None and recorded.is_dir():
+        return recorded
     candidates = [
         Path.home() / "Saved Games" / name
         for name in ("DCS", "DCS.openbeta")
@@ -392,6 +401,9 @@ def discover_saved_games(explicit: Path | None) -> Path:
 def discover_dcs_install(explicit: Path | None) -> Path:
     if explicit is not None:
         return explicit.resolve()
+    recorded = _recorded_path("dcs_install")
+    if recorded is not None and (recorded / RELATIVE_PANEL).is_file():
+        return recorded
     candidates: list[Path] = []
     configured = os.environ.get("DCS_INSTALL_DIR")
     if configured:
@@ -412,6 +424,15 @@ def discover_dcs_install(explicit: Path | None) -> Path:
             valid.append(resolved)
             seen.add(resolved)
     return _require_one(valid, "DCS installation", "--dcs-install")
+
+
+def _recorded_path(name: str) -> Path | None:
+    try:
+        state = load_installation_state()
+    except OSError:
+        return None
+    value = state.get(name)
+    return Path(value).resolve() if isinstance(value, str) and value else None
 
 
 def _require_one(candidates: list[Path], description: str, option: str) -> Path:
@@ -714,16 +735,29 @@ def main() -> int:
 
     args = parser.parse_args()
     try:
+        saved_games = discover_saved_games(args.saved_games)
+        dcs_install = discover_dcs_install(args.dcs_install)
         if args.command in ("install", "uninstall") and os.name == "nt":
             if not args.elevated:
                 if not _is_windows_administrator():
-                    return _run_elevated(sys.argv[1:])
+                    code = _run_elevated(sys.argv[1:])
+                    if code == 0 and args.command == "install":
+                        save_installation_state(
+                            Path(__file__).resolve().parents[1],
+                            dcs_install,
+                            saved_games,
+                        )
+                    return code
             elif not _is_windows_administrator():
                 raise InstallError("The elevated installer did not receive administrator rights")
-        saved_games = discover_saved_games(args.saved_games)
-        dcs_install = discover_dcs_install(args.dcs_install)
         if args.command == "install":
             result = install_hook(dcs_install, saved_games, args.hook)
+            if not args.elevated:
+                save_installation_state(
+                    Path(__file__).resolve().parents[1],
+                    dcs_install,
+                    saved_games,
+                )
         elif args.command == "preflight":
             result = installation_preflight(dcs_install, saved_games, args.hook)
         elif args.command == "uninstall":

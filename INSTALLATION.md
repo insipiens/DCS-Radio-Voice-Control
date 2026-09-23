@@ -121,7 +121,8 @@ the next line. You may instead put the whole command on one line:
 
 Use `DCS.openbeta` instead of `DCS` in the Saved Games path if that is the folder DCS created.
 Providing both paths is also the solution if DCS Radio Voice Control reports that it found more than one DCS
-installation or more than one Saved Games DCS folder.
+installation or more than one Saved Games DCS folder. After a successful install, these locations are remembered
+in `%LOCALAPPDATA%\DCSRadioVoiceControl\installation.json`.
 
 ## 4. Configure your microphone, sound, and push-to-talk
 
@@ -316,8 +317,8 @@ If you need to verify the installed DCS hook manually, run:
 .\runtime\python.exe .\tools\install.py status
 ```
 
-A healthy installation reports `"healthy": true`. If you installed DCS using explicit
-`--dcs-install` or `--saved-games` paths, supply the same paths to the status command.
+A healthy installation reports `"healthy": true`. The successful installation's DCS and Saved Games
+locations are reused automatically.
 
 ## Optional speech models
 
@@ -385,6 +386,7 @@ update or another modification. Do not manually replace the panel when this happ
 |---|---|
 | Program, private runtime, Whisper, and Alan | The extracted DCS Radio Voice Control folder |
 | Settings | `%LOCALAPPDATA%\DCSRadioVoiceControl\config.json` |
+| Installed DCS locations | `%LOCALAPPDATA%\DCSRadioVoiceControl\installation.json` |
 | Logs | `%LOCALAPPDATA%\DCSRadioVoiceControl\logs` |
 | Installation record and backups | `Saved Games\DCS\Scripts\DCSRadioVoiceControl` |
 | DCS hook target | The active DCS installation's `Scripts\UI\RadioCommandDialogPanel\RadioCommandDialogsPanel.lua` |
