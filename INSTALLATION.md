@@ -16,6 +16,8 @@ Close DCS before installing, updating, repairing or uninstalling the DCS integra
 
 ## Installation
 
+[Download the development installer (Windows EXE)](https://github.com/insipiens/DCS-Radio-Voice-Control/releases/download/development-installer/DCS-Radio-Voice-Control-Setup.exe).
+
 1. Run `DCS-Radio-Voice-Control-Setup.exe`.
 2. Read the integration notice and choose **Install**.
 3. Setup installs the application for the current Windows user at:
@@ -80,7 +82,7 @@ With Start with Windows enabled, the lightweight controller waits for DCS. Whisp
 Do not uninstall first.
 
 1. Close DCS and DRVC.
-2. Run the newer `DCS-Radio-Voice-Control-Setup.exe`.
+2. [Download the current development installer](https://github.com/insipiens/DCS-Radio-Voice-Control/releases/download/development-installer/DCS-Radio-Voice-Control-Setup.exe) and run it.
 3. Setup uses the same AppId and installation directory, replacing the application files in place.
 4. Component reconciliation leaves valid unchanged Python/SDL, Whisper and Piper components alone.
 5. The DCS hook is updated only if its existing installation can be verified; UAC is requested only if the protected DCS file actually needs changing.
