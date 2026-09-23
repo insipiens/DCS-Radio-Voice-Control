@@ -10,7 +10,7 @@ DCS Radio Voice Control operates the live DCS radio menu by voice. Hold push-to-
 - HOTAS or keyboard push-to-talk.
 - Local Whisper speech recognition and Piper speech output.
 - Configurable aliases, microphone, audio output and matching thresholds.
-- Optional Desktop shortcut and Start with Windows.
+- Optional Desktop shortcut and Start when DCS starts.
 
 ## Install
 
@@ -22,7 +22,7 @@ Requires Windows 11 x64 and DCS World.
 2. Run `DCS-Radio-Voice-Control-Setup.exe`.
 3. Read the DCS integration notice and choose **Install**.
 4. Setup installs DRVC for your Windows account and downloads/verifies its private Python, Whisper and Piper components. Approve Windows elevation only when the protected DCS radio-menu file needs changing.
-5. On the final page, leave **Configure DCS Radio Voice Control** selected. Choose your microphone, audio output and PTT button, then **Save configuration and start**.
+5. On the final page, leave **Configure DCS Radio Voice Control** selected. Choose your microphone, audio output and PTT button, then **Save configuration and close**.
 
 The program is installed under `%LOCALAPPDATA%\Programs\DCS Radio Voice Control`. User configuration and aliases are kept separately under `%LOCALAPPDATA%\DCSRadioVoiceControl`.
 
@@ -52,7 +52,7 @@ Aliases can make DCS terminology more natural. For example, `Two, Rejoin` can re
 
 ## Configuration
 
-Open **Start > DCS Radio Voice Control > Configure DCS Radio Voice Control**. Configuration controls the microphone, audio output, HOTAS/PTT, Whisper model, matching thresholds, feedback, Desktop shortcut and Start with Windows.
+Open **Start > DCS Radio Voice Control > Configure DCS Radio Voice Control**. Configuration controls the microphone, audio output, HOTAS/PTT, Whisper model, matching thresholds, feedback, Desktop shortcut and Start when DCS starts.
 
 ## Updating
 

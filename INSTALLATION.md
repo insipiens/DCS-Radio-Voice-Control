@@ -33,15 +33,15 @@ The normal installer recognises the standard standalone and default Steam DCS lo
 
 ## Configuration
 
-The first configuration run offers **Save configuration and start**.
+The first configuration run offers **Save configuration and close**.
 
 1. Select the microphone and run the three-second level test.
 2. Select the playback device and test Alan/cues if required.
 3. Choose **Learn a HOTAS button**, or **Use Space only**.
 4. Leave `base.en`, CPU recognition and the default matching thresholds for the first test.
 5. **Create a Desktop shortcut** is selected on first setup; clear it if unwanted.
-6. Optionally enable **Start DCS Radio Voice Control with Windows**.
-7. Choose **Save configuration and start**.
+6. Optionally enable **Start when DCS starts**.
+7. Choose **Save configuration and close**.
 
 Later, open **Start > DCS Radio Voice Control > Configure DCS Radio Voice Control**. The normal button is then **Save configuration**.
 
@@ -73,9 +73,9 @@ Use either:
 
 - **Start > DCS Radio Voice Control > DCS Radio Voice Control**;
 - the optional Desktop shortcut; or
-- **Start with Windows**, if enabled in Configuration.
+- **Start when DCS starts**, if enabled in Configuration.
 
-With Start with Windows enabled, the lightweight controller waits for DCS. Whisper, Piper, microphone capture and optional GPU support are loaded only when a mission and current DCS hook are ready.
+With Start when DCS starts enabled, the lightweight controller waits for DCS. Whisper, Piper, microphone capture and optional GPU support are loaded only when a mission and current DCS hook are ready.
 
 ## Updating
 
@@ -109,7 +109,7 @@ Repair preserves configuration, PTT settings and aliases.
 5. DRVC verifies the installed panel and its backup before restoring the original. If either has changed unexpectedly, uninstall stops without overwriting DCS.
 6. Choose whether to keep configuration and aliases for a future reinstall. Keeping them is the default/recommended path; deleting them is an explicit choice.
 
-A successful uninstall removes the application, private runtime, speech components, Start-menu entries, canonical Desktop shortcut, Start with Windows registration, logs and DRVC Saved Games integration state.
+A successful uninstall removes the application, private runtime, speech components, Start-menu entries, canonical Desktop shortcut, Start when DCS starts registration, logs and DRVC Saved Games integration state.
 
 ## Troubleshooting
 

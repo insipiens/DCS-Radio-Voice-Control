@@ -41,9 +41,9 @@ def registration_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
 
 def set_enabled(enabled: bool, root: Path = PROJECT_ROOT) -> dict[str, Any]:
     if not isinstance(enabled, bool):
-        raise ValueError("Start with Windows must be enabled or disabled.")
+        raise ValueError("Start when DCS starts must be enabled or disabled.")
     if os.name != "nt":
-        raise OSError("Start with Windows is available only on Windows.")
+        raise OSError("Start when DCS starts is available only on Windows.")
     import winreg
 
     with winreg.CreateKey(winreg.HKEY_CURRENT_USER, RUN_KEY) as key:

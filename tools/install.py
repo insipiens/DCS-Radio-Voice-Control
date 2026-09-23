@@ -599,6 +599,23 @@ def _is_windows_administrator() -> bool:
     return bool(ctypes.windll.shell32.IsUserAnAdmin())
 
 
+def _installation_requires_elevation(dcs_install: Path) -> bool:
+    """Return whether the target DCS panel directory is not writable by this user."""
+    target_directory = dcs_install / RELATIVE_PANEL.parent
+    try:
+        descriptor, temporary_name = tempfile.mkstemp(
+            prefix="DCSRadioVoiceControl-permission-",
+            suffix=".tmp",
+            dir=target_directory,
+        )
+    except OSError:
+        return True
+    else:
+        os.close(descriptor)
+        Path(temporary_name).unlink(missing_ok=True)
+        return False
+
+
 def _run_elevated(arguments: list[str]) -> int:
     """Relaunch this installer through UAC and return the child exit code."""
 
@@ -757,18 +774,21 @@ def main() -> int:
             if preflight.get("state") == "repair_required":
                 raise InstallError(preflight.get("detail", "DCS integration requires repair"))
         if args.command in ("install", "uninstall") and os.name == "nt":
-            if not args.elevated:
-                if not _is_windows_administrator():
-                    code = _run_elevated(sys.argv[1:])
-                    if code == 0 and args.command == "install":
-                        save_installation_state(
-                            Path(__file__).resolve().parents[1],
-                            dcs_install,
-                            saved_games,
-                        )
-                    return code
-            elif not _is_windows_administrator():
+            if args.elevated and not _is_windows_administrator():
                 raise InstallError("The elevated installer did not receive administrator rights")
+            if (
+                not args.elevated
+                and not _is_windows_administrator()
+                and _installation_requires_elevation(dcs_install)
+            ):
+                code = _run_elevated(sys.argv[1:])
+                if code == 0 and args.command == "install":
+                    save_installation_state(
+                        Path(__file__).resolve().parents[1],
+                        dcs_install,
+                        saved_games,
+                    )
+                return code
         if args.command == "install":
             result = install_hook(dcs_install, saved_games, args.hook)
             if not args.elevated:

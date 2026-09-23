@@ -40,6 +40,7 @@ Source: "..\install.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\maintenance.ps1"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\repair.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\run.bat"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\update.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\setup.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\setup.ps1"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\setup-stt.bat"; DestDir: "{app}"; Flags: ignoreversion
@@ -54,13 +55,14 @@ Source: "..\tools\install.py"; DestDir: "{app}\tools"; Flags: ignoreversion
 Source: "..\tools\purge-local.ps1"; DestDir: "{app}\tools"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\DCS Radio Voice Control"; Filename: "{app}\run.bat"; WorkingDir: "{app}"
+Name: "{group}\Start DCS Radio Voice Control"; Filename: "{app}\runtime\pythonw.exe"; Parameters: "-m dcs_radio_voice_control.launcher --tray"; WorkingDir: "{app}"
 Name: "{group}\Configure DCS Radio Voice Control"; Filename: "{app}\configuration.bat"; WorkingDir: "{app}"
 Name: "{group}\Repair DCS Radio Voice Control"; Filename: "{app}\repair.bat"; WorkingDir: "{app}"
+Name: "{group}\Download DCS Radio Voice Control update"; Filename: "{app}\update.bat"; WorkingDir: "{app}"
 
 [Run]
-Filename: "{app}\configuration.bat"; Parameters: "--start-after-save"; Description: "Configure DCS Radio Voice Control"; WorkingDir: "{app}"; Flags: postinstall skipifsilent
-Filename: "{app}\run.bat"; Description: "Start DCS Radio Voice Control"; WorkingDir: "{app}"; Flags: postinstall skipifsilent nowait
+Filename: "{app}\configuration.bat"; Parameters: "--close-after-save"; Description: "Configure DCS Radio Voice Control"; WorkingDir: "{app}"; Flags: postinstall skipifsilent
+Filename: "{app}\runtime\pythonw.exe"; Parameters: "-m dcs_radio_voice_control.launcher --tray"; Description: "Start DCS Radio Voice Control"; WorkingDir: "{app}"; Flags: postinstall skipifsilent nowait
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\runtime"

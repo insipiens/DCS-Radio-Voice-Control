@@ -205,8 +205,8 @@ class ConfigurationHandler(BaseHTTPRequestHandler):
             if self.path == "/":
                 page = PAGE.replace("__TOKEN__", self.server.token)
                 page = page.replace(
-                    "__START_AFTER_SAVE__",
-                    "true" if self.server.start_after_save else "false",
+                    "__CLOSE_AFTER_SAVE__",
+                    "true" if self.server.close_after_save else "false",
                 )
                 self._html(page)
             elif self.path == "/api/status":
@@ -226,13 +226,13 @@ class ConfigurationHandler(BaseHTTPRequestHandler):
             return
         try:
             request = self._request_json()
-            start_requested = False
-            if self.path in {"/api/settings", "/api/settings/start"}:
-                if self.path == "/api/settings/start" and not self.server.start_after_save:
+            close_requested = False
+            if self.path in {"/api/settings", "/api/settings/close"}:
+                if self.path == "/api/settings/close" and not self.server.close_after_save:
                     self.send_error(HTTPStatus.NOT_FOUND)
                     return
                 result = self.server.application.save(request)
-                start_requested = self.path == "/api/settings/start"
+                close_requested = self.path == "/api/settings/close"
             elif self.path == "/api/hotas/learn":
                 result = self.server.application.learn_hotas()
             elif self.path == "/api/hotas/keyboard":
@@ -247,8 +247,8 @@ class ConfigurationHandler(BaseHTTPRequestHandler):
                 self.send_error(HTTPStatus.NOT_FOUND)
                 return
             self._json(result)
-            if start_requested:
-                self.server.request_start()
+            if close_requested:
+                self.server.request_close()
         except (OSError, ValueError, TimeoutError) as exc:
             self._json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
 
@@ -294,25 +294,25 @@ class ConfigurationServer(HTTPServer):
         self,
         application: ConfigurationApplication,
         *,
-        start_after_save: bool = False,
+        close_after_save: bool = False,
     ) -> None:
         super().__init__((HOST, PORT), ConfigurationHandler)
         self.application = application
         self.token = secrets.token_urlsafe(24)
-        self.start_after_save = start_after_save
-        self.start_requested = False
+        self.close_after_save = close_after_save
+        self.close_requested = False
 
-    def request_start(self) -> None:
-        self.start_requested = True
+    def request_close(self) -> None:
+        self.close_requested = True
         threading.Thread(target=self.shutdown, daemon=True).start()
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--start-after-save",
+        "--close-after-save",
         action="store_true",
-        help="close configuration after saving so the installer can start voice control",
+        help="close configuration after saving so Setup can start the tray controller",
     )
     args = parser.parse_args()
     server: ConfigurationServer | None = None
@@ -320,21 +320,21 @@ def main() -> int:
         application = ConfigurationApplication()
         server = ConfigurationServer(
             application,
-            start_after_save=args.start_after_save,
+            close_after_save=args.close_after_save,
         )
         address = f"http://{HOST}:{PORT}/"
         print("DCS Radio Voice Control configuration")
         print(f"Opening {address}")
         print(f"Configuration: {config_path()}")
         print(f"Logs: {log_directory()}")
-        if args.start_after_save:
-            print("Save configuration in the browser to start DCS Radio Voice Control.")
+        if args.close_after_save:
+            print("Save configuration in the browser. Setup will then start DCS Radio Voice Control.")
         else:
             print("Close this window or press Ctrl+C when setup is complete.")
         webbrowser.open(address)
         server.serve_forever()
-        if server.start_requested:
-            print("Configuration saved. Starting DCS Radio Voice Control.")
+        if server.close_requested:
+            print("Configuration saved.")
             return 10
         return 0
     except KeyboardInterrupt:
@@ -359,20 +359,20 @@ PAGE = r'''<!doctype html>
 <section class="card"><h2>Push to talk</h2><div id="pttCurrent" class="status">Loading…</div><div id="controllers" class="hint"></div><button id="learnPtt" class="primary">Learn a HOTAS button</button><button id="keyboardPtt">Use Space only</button><div class="hint">Learning ignores controls already held when scanning starts. Press and release the desired button.</div></section>
 <section class="card"><h2>Command matching</h2><label>Minimum match <span id="scoreValue" class="value"></span></label><input id="score" type="range" step="0.01"><label>Minimum lead over runner-up <span id="leadValue" class="value"></span></label><input id="lead" type="range" step="0.01"><div class="hint">Both conditions must pass before a command is sent.</div></section>
 <section class="card"><h2>Speech recognition</h2><label for="model">Installed Whisper model</label><select id="model"></select><label><input id="useGpu" type="checkbox"> Use GPU acceleration (experimental)</label><div class="hint">Install another model with setup-stt.bat small.en or medium.en. Install the optional CUDA worker with setup-stt.bat base.en cuda12. Live DCS vocabulary prompting remains enabled.</div></section>
-<section class="card"><h2>Windows integration</h2><label><input id="desktopShortcut" type="checkbox"> Create a Desktop shortcut</label><div class="hint">Creates a DCS Radio Voice Control shortcut on your Windows Desktop for manual starts.</div><label><input id="startWithWindows" type="checkbox"> Start DCS Radio Voice Control with Windows</label><div class="hint">A lightweight controller waits for DCS. Whisper, Piper, the microphone, and GPU support load only after a mission and the DCS hook are ready.</div><div id="controllerState" class="status">Loading…</div></section>
+<section class="card"><h2>Windows integration</h2><label><input id="desktopShortcut" type="checkbox"> Create a Desktop shortcut</label><div class="hint">Creates a DCS Radio Voice Control shortcut on your Windows Desktop for manual starts.</div><label><input id="startWithWindows" type="checkbox"> Start when DCS starts</label><div class="hint">A lightweight controller waits for DCS. Whisper, Piper, the microphone, and GPU support load only after a mission and the DCS hook are ready.</div><div id="controllerState" class="status">Loading…</div></section>
 <section class="card wide"><button id="save" class="primary">Save configuration</button><div id="saveResult" class="status">No unsaved changes.</div><div id="paths" class="paths"></div></section>
 <section class="card wide"><h2>Recent activity</h2><div id="logs" class="log">No events yet.</div></section>
 </div></main><script>
-const token='__TOKEN__';const startAfterSave=__START_AFTER_SAVE__;let state=null;let learning=false;
+const token='__TOKEN__';const closeAfterSave=__CLOSE_AFTER_SAVE__;let state=null;let learning=false;
 const $=id=>document.getElementById(id);const pct=n=>Math.round(n*100)+'%';
 async function api(path,body){const options=body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-DCS-Radio-Voice-Control-Token':token},body:JSON.stringify(body)};const response=await fetch(path,options);const value=await response.json();if(!response.ok)throw new Error(value.error||'Request failed');return value}
 function option(select,value,label){const node=document.createElement('option');node.value=value;node.textContent=label;select.appendChild(node)}
-function render(s){state=s;const c=s.config;$('microphone').innerHTML='';s.microphones.forEach(m=>option($('microphone'),m.device_id,m.name));if(c.microphone)$('microphone').value=c.microphone.device_id;$('score').min=s.score_range[0];$('score').max=s.score_range[1];$('score').value=c.matching.minimum_score;$('lead').min=s.lead_range[0];$('lead').max=s.lead_range[1];$('lead').value=c.matching.minimum_lead;$('audioCues').checked=c.feedback.audio_cues;$('cueVolume').min=s.cue_volume_range[0];$('cueVolume').max=s.cue_volume_range[1];$('cueVolume').value=c.feedback.cue_volume;$('model').innerHTML='';s.models.forEach(m=>option($('model'),m,m));$('model').value=c.stt.model;$('useGpu').checked=c.stt.use_gpu&&s.stt_compute==='cuda12';$('useGpu').disabled=s.stt_compute!=='cuda12';$('output').innerHTML='';option($('output'),'','Windows default');s.outputs.forEach(d=>option($('output'),d,d));$('output').value=c.audio.output_device||'';$('desktopShortcut').checked=startAfterSave?true:s.desktop_shortcut.exists;$('startWithWindows').checked=c.startup.start_with_windows;$('controllerState').textContent=`${s.controller.state}${s.controller.message?' — '+s.controller.message:''}`;values();const p=c.ptt;$('pttCurrent').textContent=p.mode==='hotas'?`${p.name} — button ${p.button}`:'Space keyboard';$('controllers').textContent=s.controllers.length?s.controllers.map(d=>`${d.name} (${d.button_count} buttons)`).join(' · '):'No SDL controllers detected.';$('paths').textContent=`Configuration: ${s.config_path} · Logs: ${s.log_path}`;renderLogs(s.events)}
+function render(s){state=s;const c=s.config;$('microphone').innerHTML='';s.microphones.forEach(m=>option($('microphone'),m.device_id,m.name));if(c.microphone)$('microphone').value=c.microphone.device_id;$('score').min=s.score_range[0];$('score').max=s.score_range[1];$('score').value=c.matching.minimum_score;$('lead').min=s.lead_range[0];$('lead').max=s.lead_range[1];$('lead').value=c.matching.minimum_lead;$('audioCues').checked=c.feedback.audio_cues;$('cueVolume').min=s.cue_volume_range[0];$('cueVolume').max=s.cue_volume_range[1];$('cueVolume').value=c.feedback.cue_volume;$('model').innerHTML='';s.models.forEach(m=>option($('model'),m,m));$('model').value=c.stt.model;$('useGpu').checked=c.stt.use_gpu&&s.stt_compute==='cuda12';$('useGpu').disabled=s.stt_compute!=='cuda12';$('output').innerHTML='';option($('output'),'','Windows default');s.outputs.forEach(d=>option($('output'),d,d));$('output').value=c.audio.output_device||'';$('desktopShortcut').checked=closeAfterSave?true:s.desktop_shortcut.exists;$('startWithWindows').checked=c.startup.start_with_windows;$('controllerState').textContent=`${s.controller.state}${s.controller.message?' — '+s.controller.message:''}`;values();const p=c.ptt;$('pttCurrent').textContent=p.mode==='hotas'?`${p.name} — button ${p.button}`:'Space keyboard';$('controllers').textContent=s.controllers.length?s.controllers.map(d=>`${d.name} (${d.button_count} buttons)`).join(' · '):'No SDL controllers detected.';$('paths').textContent=`Configuration: ${s.config_path} · Logs: ${s.log_path}`;renderLogs(s.events)}
 function values(){$('scoreValue').textContent=pct(+$('score').value);$('leadValue').textContent=pct(+$('lead').value);$('cueValue').textContent=pct(+$('cueVolume').value)}
 function renderLogs(events){const box=$('logs');box.innerHTML='';if(!events.length){box.textContent='No events yet.';return}events.slice().reverse().forEach(e=>{const row=document.createElement('div');row.textContent=`${e.timestamp||''}  ${e.event||''}  ${e.transcript||e.message||e.reason||''}`;box.appendChild(row)})}
-async function load(){try{render(await api('/api/status'));$('save').textContent=startAfterSave?'Save configuration and start':'Save configuration'}catch(e){$('saveResult').textContent=e.message;$('saveResult').classList.add('error')}}
+async function load(){try{render(await api('/api/status'));$('save').textContent=closeAfterSave?'Save configuration and close':'Save configuration'}catch(e){$('saveResult').textContent=e.message;$('saveResult').classList.add('error')}}
 $('score').oninput=values;$('lead').oninput=values;$('cueVolume').oninput=values;
-$('save').onclick=async()=>{try{const endpoint=startAfterSave?'/api/settings/start':'/api/settings';const s=await api(endpoint,{microphone_id:+$('microphone').value,minimum_score:+$('score').value,minimum_lead:+$('lead').value,model:$('model').value,use_gpu:$('useGpu').checked,output_device:$('output').value||null,audio_cues:$('audioCues').checked,cue_volume:+$('cueVolume').value,desktop_shortcut:$('desktopShortcut').checked,start_with_windows:$('startWithWindows').checked});render(s);$('saveResult').classList.remove('error');$('saveResult').textContent=startAfterSave?'Configuration saved. DCS Radio Voice Control is starting; you may close this page.':'Configuration saved.';$('save').disabled=startAfterSave}catch(e){$('saveResult').textContent=e.message;$('saveResult').classList.add('error')}};
+$('save').onclick=async()=>{try{const endpoint=closeAfterSave?'/api/settings/close':'/api/settings';const s=await api(endpoint,{microphone_id:+$('microphone').value,minimum_score:+$('score').value,minimum_lead:+$('lead').value,model:$('model').value,use_gpu:$('useGpu').checked,output_device:$('output').value||null,audio_cues:$('audioCues').checked,cue_volume:+$('cueVolume').value,desktop_shortcut:$('desktopShortcut').checked,start_with_windows:$('startWithWindows').checked});render(s);$('saveResult').classList.remove('error');$('saveResult').textContent=closeAfterSave?'Configuration saved. DCS Radio Voice Control is starting. You may close this tab.':'Configuration saved.';$('save').disabled=closeAfterSave}catch(e){$('saveResult').textContent=e.message;$('saveResult').classList.add('error')}};
 $('micTest').onclick=async()=>{try{$('micResult').textContent='Speak normally for three seconds…';const r=await api('/api/microphone/test',{microphone_id:+$('microphone').value});$('micResult').textContent=`Average ${r.average_dbfs??'silence'} dBFS · peak ${r.peak_dbfs??'silence'} dBFS`}catch(e){$('micResult').textContent=e.message;$('micResult').classList.add('error')}};
 $('learnPtt').onclick=async()=>{learning=true;try{$('pttCurrent').textContent='Scanning all controllers—press and release the desired button…';const r=await api('/api/hotas/learn',{});render(r.status);$('pttCurrent').textContent=`Saved ${r.binding.name} — button ${r.binding.button}. Press it again to test.`}catch(e){$('pttCurrent').textContent=e.message;$('pttCurrent').classList.add('error')}finally{learning=false}};
 $('keyboardPtt').onclick=async()=>{try{render(await api('/api/hotas/keyboard',{}))}catch(e){$('pttCurrent').textContent=e.message}};
