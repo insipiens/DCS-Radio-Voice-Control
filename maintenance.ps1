@@ -83,6 +83,30 @@ function Get-RuntimeStatus {
     return Component "runtime" "current" "Python $PythonVersion / pygame-ce $PygameVersion"
 }
 
+function Test-Worker([string]$Path) {
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $false }
+    $StartInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $StartInfo.FileName = $Path
+    $StartInfo.Arguments = "--version"
+    $StartInfo.UseShellExecute = $false
+    $StartInfo.RedirectStandardOutput = $true
+    $StartInfo.RedirectStandardError = $true
+    $StartInfo.CreateNoWindow = $true
+    $Process = New-Object System.Diagnostics.Process
+    $Process.StartInfo = $StartInfo
+    try {
+        if (-not $Process.Start()) { return $false }
+        $StandardOutput = $Process.StandardOutput.ReadToEndAsync()
+        $StandardError = $Process.StandardError.ReadToEndAsync()
+        $Process.WaitForExit()
+        $null = $StandardOutput.Result
+        $null = $StandardError.Result
+        return $Process.ExitCode -eq 0
+    }
+    catch { return $false }
+    finally { $Process.Dispose() }
+}
+
 function Get-SttStatus {
     $Desired = Get-DesiredStt
     $Dir = Join-Path $Root "stt"
@@ -104,11 +128,7 @@ function Get-SttStatus {
     if ($Actual -ne $WhisperModels[$Desired.model]) {
         return Component "stt" "repair_required" "Selected Whisper model failed SHA-256 validation."
     }
-    try {
-        $Process = Start-Process -FilePath $Exe -ArgumentList "--version" -NoNewWindow -Wait -PassThru
-        if ($Process.ExitCode -ne 0) { throw "worker" }
-    }
-    catch {
+    if (-not (Test-Worker $Exe)) {
         return Component "stt" "repair_required" "Whisper worker self-test failed."
     }
     return Component "stt" "current" "whisper.cpp $WhisperVersion / $($Desired.compute) / $($Desired.model)"
