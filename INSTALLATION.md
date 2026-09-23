@@ -116,7 +116,7 @@ A successful uninstall removes the application, private runtime, speech componen
 | What you see | Action |
 |---|---|
 | Setup cannot locate DCS | The current Setup UI auto-detects standard locations only. Do not point it at a guessed folder; record the error for investigation. |
-| Download/component setup fails | Check the connection and antivirus history, then run Setup again or use **Repair** if the application is installed. Verified existing components are reused. |
+| Download/component setup fails | Read `%LOCALAPPDATA%\DCSRadioVoiceControl\logs\installer-components.log` for the component and underlying error. Check the connection and antivirus history, then run Setup again or use **Repair** if the application is installed. Verified existing components are reused. |
 | Configuration page does not open | Leave its window running and open `http://127.0.0.1:34385/` locally. |
 | Microphone test is silent | Check the selected input and Windows microphone permissions. |
 | HOTAS is absent | Connect/power it before opening Configuration, then reopen Configuration. Space remains available. |
