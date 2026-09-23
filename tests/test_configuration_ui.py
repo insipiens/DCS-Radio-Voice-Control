@@ -21,7 +21,8 @@ class ConfigurationUiTests(unittest.TestCase):
             "Test Alan voice",
             "Recent activity",
             "Audio feedback",
-            "Automatic startup",
+            "Windows integration",
+            "Create a Desktop shortcut",
             "Start DCS Radio Voice Control with Windows",
             "Test accepted cue",
             "Save configuration and start",
@@ -32,6 +33,7 @@ class ConfigurationUiTests(unittest.TestCase):
         self.assertIn("X-DCS-Radio-Voice-Control-Token", PAGE)
         self.assertNotIn("X-DCS Radio Voice Control-Token", PAGE)
         self.assertIn("startAfterSave?'/api/settings/start':'/api/settings'", PAGE)
+        self.assertIn("desktop_shortcut:$('desktopShortcut').checked", PAGE)
 
 
 if __name__ == "__main__":

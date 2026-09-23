@@ -50,7 +50,7 @@ Requires Windows 11 x64 and DCS World.
 
    and press **Enter**. Installation may take several minutes the first time.
 
-7. When installation is complete, the configuration page opens automatically. Select your microphone, audio output and push-to-talk button, then choose **Save configuration and start**.
+7. When installation is complete, the configuration page opens automatically. Select your microphone, audio output and push-to-talk button. **Create a Desktop shortcut** is selected by default; you can also choose whether DCS Radio Voice Control starts with Windows. Then choose **Save configuration and start**.
 
 8. DCS Radio Voice Control will start and wait for DCS. Start DCS and enter a mission.
 
@@ -148,9 +148,10 @@ The configuration page lets you select and test:
 - speech-recognition model;
 - command-matching settings;
 - audio feedback; and
+- Desktop shortcut; and
 - automatic startup with Windows.
 
-If automatic startup is enabled, DCS Radio Voice Control waits quietly until DCS is running and activates voice control when required.
+The Desktop shortcut gives you a simple manual way to start DCS Radio Voice Control. You can move or pin the shortcut using the normal Windows controls. If automatic startup is enabled, DCS Radio Voice Control waits quietly until DCS is running and activates voice control when required.
 
 ## Updating
 

@@ -144,9 +144,12 @@ On the page:
 3. Under **Push to talk**, click **Learn a HOTAS button**, then press and release the button you
    want. If you do not want to use a controller, click **Use Space only**.
 4. Leave the default `base.en`, CPU, and command-matching settings selected for the first test.
-5. Optional: select **Start DCS Radio Voice Control with Windows**. This installs a per-user sign-in entry;
+5. **Create a Desktop shortcut** is selected by default on the first installation. Leave it selected if
+   you want an obvious manual way to start DCS Radio Voice Control later. You can move or pin that shortcut
+   using the normal Windows controls.
+6. Optional: select **Start DCS Radio Voice Control with Windows**. This installs a per-user sign-in entry;
    it does not require administrator permission.
-6. On the first installation, click **Save configuration and start**. Your settings are saved,
+7. On the first installation, click **Save configuration and start**. Your settings are saved,
    the configuration program closes cleanly, and DCS Radio Voice Control starts automatically.
 
 When you open `configuration.bat` later, the button is **Save configuration** and does not
@@ -161,7 +164,8 @@ start another controller. Configuration is stored at
    live DCS command catalogue.
 3. Hold your configured HOTAS button, or Space, speak a command, and then release the button.
 
-For later manual starts, run `.\run.bat` from the DCS Radio Voice Control folder. `run.bat`
+For later manual starts, use the **DCS Radio Voice Control** Desktop shortcut if you created it. You can
+still run `.\run.bat` from the DCS Radio Voice Control folder. `run.bat`
 checks whether the installed DCS hook matches this version and asks for administrator permission
 only if the hook must be installed or updated.
 
@@ -262,7 +266,7 @@ To stop DCS Radio Voice Control, return to its PowerShell window and press Ctrl+
 
 If **Start DCS Radio Voice Control with Windows** is disabled, use this manual sequence for each session:
 
-1. Run `.\run.bat` from the DCS Radio Voice Control folder.
+1. Double-click the **DCS Radio Voice Control** Desktop shortcut, or run `.\run.bat` from the DCS Radio Voice Control folder.
 2. Start DCS and enter the mission.
 3. Leave the DCS Radio Voice Control window open while flying.
 4. Press Ctrl+C in that window when finished.

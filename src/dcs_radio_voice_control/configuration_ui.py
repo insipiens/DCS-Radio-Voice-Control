@@ -17,7 +17,8 @@ import webbrowser
 
 from .audio_cues import play_cue
 from .audio_output import AudioOutput
-from .autostart import registration_status, set_enabled
+from .autostart import registration_status, set_enabled as set_autostart_enabled
+from .desktop_shortcut import shortcut_status, set_enabled as set_shortcut_enabled
 from .configuration_store import (
     CUE_VOLUME_RANGE,
     MINIMUM_LEAD_RANGE,
@@ -71,6 +72,7 @@ class ConfigurationApplication:
             "cue_volume_range": CUE_VOLUME_RANGE,
             "events": recent_events(30),
             "autostart": registration_status(),
+            "desktop_shortcut": shortcut_status(),
             "controller": get_state(),
         }
 
@@ -92,6 +94,10 @@ class ConfigurationApplication:
             raise ValueError("Select a currently connected audio output.")
         original = load_document()
         start_with_windows = request.get("start_with_windows")
+        shortcut_before = shortcut_status()["exists"]
+        desktop_shortcut = request.get("desktop_shortcut", shortcut_before)
+        if not isinstance(desktop_shortcut, bool):
+            raise ValueError("Desktop shortcut must be enabled or disabled.")
         document = update_settings(
             original,
             minimum_score=request.get("minimum_score"),
@@ -106,9 +112,14 @@ class ConfigurationApplication:
         )
         target = save_document(document)
         try:
-            set_enabled(start_with_windows)
+            set_autostart_enabled(start_with_windows)
+            set_shortcut_enabled(desktop_shortcut)
         except (OSError, ValueError):
-            save_document(original)
+            try:
+                set_autostart_enabled(bool(original["startup"]["start_with_windows"]))
+                set_shortcut_enabled(bool(shortcut_before))
+            finally:
+                save_document(original)
             raise
         write_event("configuration_saved", message=str(target))
         return self.status()
@@ -345,7 +356,7 @@ PAGE = r'''<!doctype html>
 <section class="card"><h2>Push to talk</h2><div id="pttCurrent" class="status">Loading…</div><div id="controllers" class="hint"></div><button id="learnPtt" class="primary">Learn a HOTAS button</button><button id="keyboardPtt">Use Space only</button><div class="hint">Learning ignores controls already held when scanning starts. Press and release the desired button.</div></section>
 <section class="card"><h2>Command matching</h2><label>Minimum match <span id="scoreValue" class="value"></span></label><input id="score" type="range" step="0.01"><label>Minimum lead over runner-up <span id="leadValue" class="value"></span></label><input id="lead" type="range" step="0.01"><div class="hint">Both conditions must pass before a command is sent.</div></section>
 <section class="card"><h2>Speech recognition</h2><label for="model">Installed Whisper model</label><select id="model"></select><label><input id="useGpu" type="checkbox"> Use GPU acceleration (experimental)</label><div class="hint">Install another model with setup-stt.bat small.en or medium.en. Install the optional CUDA worker with setup-stt.bat base.en cuda12. Live DCS vocabulary prompting remains enabled.</div></section>
-<section class="card"><h2>Automatic startup</h2><label><input id="startWithWindows" type="checkbox"> Start DCS Radio Voice Control with Windows</label><div class="hint">A lightweight controller waits for DCS. Whisper, Piper, the microphone, and GPU support load only after a mission and the DCS hook are ready.</div><div id="controllerState" class="status">Loading…</div></section>
+<section class="card"><h2>Windows integration</h2><label><input id="desktopShortcut" type="checkbox"> Create a Desktop shortcut</label><div class="hint">Creates a DCS Radio Voice Control shortcut on your Windows Desktop for manual starts.</div><label><input id="startWithWindows" type="checkbox"> Start DCS Radio Voice Control with Windows</label><div class="hint">A lightweight controller waits for DCS. Whisper, Piper, the microphone, and GPU support load only after a mission and the DCS hook are ready.</div><div id="controllerState" class="status">Loading…</div></section>
 <section class="card wide"><button id="save" class="primary">Save configuration</button><div id="saveResult" class="status">No unsaved changes.</div><div id="paths" class="paths"></div></section>
 <section class="card wide"><h2>Recent activity</h2><div id="logs" class="log">No events yet.</div></section>
 </div></main><script>
@@ -353,12 +364,12 @@ const token='__TOKEN__';const startAfterSave=__START_AFTER_SAVE__;let state=null
 const $=id=>document.getElementById(id);const pct=n=>Math.round(n*100)+'%';
 async function api(path,body){const options=body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-DCS-Radio-Voice-Control-Token':token},body:JSON.stringify(body)};const response=await fetch(path,options);const value=await response.json();if(!response.ok)throw new Error(value.error||'Request failed');return value}
 function option(select,value,label){const node=document.createElement('option');node.value=value;node.textContent=label;select.appendChild(node)}
-function render(s){state=s;const c=s.config;$('microphone').innerHTML='';s.microphones.forEach(m=>option($('microphone'),m.device_id,m.name));if(c.microphone)$('microphone').value=c.microphone.device_id;$('score').min=s.score_range[0];$('score').max=s.score_range[1];$('score').value=c.matching.minimum_score;$('lead').min=s.lead_range[0];$('lead').max=s.lead_range[1];$('lead').value=c.matching.minimum_lead;$('audioCues').checked=c.feedback.audio_cues;$('cueVolume').min=s.cue_volume_range[0];$('cueVolume').max=s.cue_volume_range[1];$('cueVolume').value=c.feedback.cue_volume;$('model').innerHTML='';s.models.forEach(m=>option($('model'),m,m));$('model').value=c.stt.model;$('useGpu').checked=c.stt.use_gpu&&s.stt_compute==='cuda12';$('useGpu').disabled=s.stt_compute!=='cuda12';$('output').innerHTML='';option($('output'),'','Windows default');s.outputs.forEach(d=>option($('output'),d,d));$('output').value=c.audio.output_device||'';$('startWithWindows').checked=c.startup.start_with_windows;$('controllerState').textContent=`${s.controller.state}${s.controller.message?' — '+s.controller.message:''}`;values();const p=c.ptt;$('pttCurrent').textContent=p.mode==='hotas'?`${p.name} — button ${p.button}`:'Space keyboard';$('controllers').textContent=s.controllers.length?s.controllers.map(d=>`${d.name} (${d.button_count} buttons)`).join(' · '):'No SDL controllers detected.';$('paths').textContent=`Configuration: ${s.config_path} · Logs: ${s.log_path}`;renderLogs(s.events)}
+function render(s){state=s;const c=s.config;$('microphone').innerHTML='';s.microphones.forEach(m=>option($('microphone'),m.device_id,m.name));if(c.microphone)$('microphone').value=c.microphone.device_id;$('score').min=s.score_range[0];$('score').max=s.score_range[1];$('score').value=c.matching.minimum_score;$('lead').min=s.lead_range[0];$('lead').max=s.lead_range[1];$('lead').value=c.matching.minimum_lead;$('audioCues').checked=c.feedback.audio_cues;$('cueVolume').min=s.cue_volume_range[0];$('cueVolume').max=s.cue_volume_range[1];$('cueVolume').value=c.feedback.cue_volume;$('model').innerHTML='';s.models.forEach(m=>option($('model'),m,m));$('model').value=c.stt.model;$('useGpu').checked=c.stt.use_gpu&&s.stt_compute==='cuda12';$('useGpu').disabled=s.stt_compute!=='cuda12';$('output').innerHTML='';option($('output'),'','Windows default');s.outputs.forEach(d=>option($('output'),d,d));$('output').value=c.audio.output_device||'';$('desktopShortcut').checked=startAfterSave?true:s.desktop_shortcut.exists;$('startWithWindows').checked=c.startup.start_with_windows;$('controllerState').textContent=`${s.controller.state}${s.controller.message?' — '+s.controller.message:''}`;values();const p=c.ptt;$('pttCurrent').textContent=p.mode==='hotas'?`${p.name} — button ${p.button}`:'Space keyboard';$('controllers').textContent=s.controllers.length?s.controllers.map(d=>`${d.name} (${d.button_count} buttons)`).join(' · '):'No SDL controllers detected.';$('paths').textContent=`Configuration: ${s.config_path} · Logs: ${s.log_path}`;renderLogs(s.events)}
 function values(){$('scoreValue').textContent=pct(+$('score').value);$('leadValue').textContent=pct(+$('lead').value);$('cueValue').textContent=pct(+$('cueVolume').value)}
 function renderLogs(events){const box=$('logs');box.innerHTML='';if(!events.length){box.textContent='No events yet.';return}events.slice().reverse().forEach(e=>{const row=document.createElement('div');row.textContent=`${e.timestamp||''}  ${e.event||''}  ${e.transcript||e.message||e.reason||''}`;box.appendChild(row)})}
 async function load(){try{render(await api('/api/status'));$('save').textContent=startAfterSave?'Save configuration and start':'Save configuration'}catch(e){$('saveResult').textContent=e.message;$('saveResult').classList.add('error')}}
 $('score').oninput=values;$('lead').oninput=values;$('cueVolume').oninput=values;
-$('save').onclick=async()=>{try{const endpoint=startAfterSave?'/api/settings/start':'/api/settings';const s=await api(endpoint,{microphone_id:+$('microphone').value,minimum_score:+$('score').value,minimum_lead:+$('lead').value,model:$('model').value,use_gpu:$('useGpu').checked,output_device:$('output').value||null,audio_cues:$('audioCues').checked,cue_volume:+$('cueVolume').value,start_with_windows:$('startWithWindows').checked});render(s);$('saveResult').classList.remove('error');$('saveResult').textContent=startAfterSave?'Configuration saved. DCS Radio Voice Control is starting; you may close this page.':'Configuration saved.';$('save').disabled=startAfterSave}catch(e){$('saveResult').textContent=e.message;$('saveResult').classList.add('error')}};
+$('save').onclick=async()=>{try{const endpoint=startAfterSave?'/api/settings/start':'/api/settings';const s=await api(endpoint,{microphone_id:+$('microphone').value,minimum_score:+$('score').value,minimum_lead:+$('lead').value,model:$('model').value,use_gpu:$('useGpu').checked,output_device:$('output').value||null,audio_cues:$('audioCues').checked,cue_volume:+$('cueVolume').value,desktop_shortcut:$('desktopShortcut').checked,start_with_windows:$('startWithWindows').checked});render(s);$('saveResult').classList.remove('error');$('saveResult').textContent=startAfterSave?'Configuration saved. DCS Radio Voice Control is starting; you may close this page.':'Configuration saved.';$('save').disabled=startAfterSave}catch(e){$('saveResult').textContent=e.message;$('saveResult').classList.add('error')}};
 $('micTest').onclick=async()=>{try{$('micResult').textContent='Speak normally for three seconds…';const r=await api('/api/microphone/test',{microphone_id:+$('microphone').value});$('micResult').textContent=`Average ${r.average_dbfs??'silence'} dBFS · peak ${r.peak_dbfs??'silence'} dBFS`}catch(e){$('micResult').textContent=e.message;$('micResult').classList.add('error')}};
 $('learnPtt').onclick=async()=>{learning=true;try{$('pttCurrent').textContent='Scanning all controllers—press and release the desired button…';const r=await api('/api/hotas/learn',{});render(r.status);$('pttCurrent').textContent=`Saved ${r.binding.name} — button ${r.binding.button}. Press it again to test.`}catch(e){$('pttCurrent').textContent=e.message;$('pttCurrent').classList.add('error')}finally{learning=false}};
 $('keyboardPtt').onclick=async()=>{try{render(await api('/api/hotas/keyboard',{}))}catch(e){$('pttCurrent').textContent=e.message}};
