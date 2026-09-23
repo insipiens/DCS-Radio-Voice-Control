@@ -89,88 +89,7 @@ try {
         $null -ne $ExistingManifest -and
         $ExistingManifest.schema -eq 2 -and
         $ExistingManifest.piper_release -eq $PiperRelease -and
-        $ExistingManifest.piper_archive_sha256 -match '^[0-9a-f]{64}
-    if (-not $PiperCurrent) {
-        $Zip = Join-Path $TemporaryRoot 'piper_windows_amd64.zip'
-        $Expanded = Join-Path $TemporaryRoot 'expanded'
-        Write-Host 'Downloading the pinned standalone Piper Windows build...'
-        Invoke-WebRequest -Uri $PiperUrl -OutFile $Zip -UseBasicParsing
-        $ArchiveSha256 = (Get-FileHash -LiteralPath $Zip -Algorithm SHA256).Hash.ToLowerInvariant()
-        if ($ArchiveSha256 -ne $PiperSha256) {
-            throw "Piper archive hash mismatch. Expected $PiperSha256 but received $ArchiveSha256."
-        }
-        Expand-Archive -LiteralPath $Zip -DestinationPath $Expanded
-        $StagedPiper = Join-Path $Expanded 'piper'
-        $StagedExe = Join-Path $StagedPiper 'piper.exe'
-        if (-not (Test-Piper $StagedExe)) {
-            throw 'The staged Piper executable failed its self-test.'
-        }
-
-        New-Item -ItemType Directory -Path $StagingDirectory | Out-Null
-        Move-Item -LiteralPath $StagedPiper -Destination (Join-Path $StagingDirectory 'piper')
-        [ordered]@{
-            schema = 2
-            piper_release = $PiperRelease
-            piper_source_url = $PiperUrl
-            piper_archive_sha256 = $ArchiveSha256
-            voice_revision = $VoiceRevision
-            model_md5 = $ModelMd5
-            config_md5 = $ConfigMd5
-            configured_at = [DateTime]::UtcNow.ToString("o")
-        } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $StagingDirectory 'dcs_radio_voice_control-tts.json') -Encoding UTF8
-
-        if (Test-Path -LiteralPath $PiperDir) {
-            Move-Item -LiteralPath $PiperDir -Destination $BackupDirectory
-            $LiveMoved = $true
-        }
-        try {
-            Move-Item -LiteralPath $StagingDirectory -Destination $PiperDir
-        }
-        catch {
-            if ($LiveMoved -and -not (Test-Path -LiteralPath $PiperDir)) {
-                Move-Item -LiteralPath $BackupDirectory -Destination $PiperDir
-                $LiveMoved = $false
-            }
-            throw
-        }
-        if (-not (Test-Piper $PiperExe)) {
-            Remove-Item -LiteralPath $PiperDir -Recurse -Force
-            if ($LiveMoved) {
-                Move-Item -LiteralPath $BackupDirectory -Destination $PiperDir
-                $LiveMoved = $false
-            }
-            throw 'The installed Piper executable failed its post-install self-test.'
-        }
-        if ($LiveMoved -and (Test-Path -LiteralPath $BackupDirectory)) {
-            Remove-Item -LiteralPath $BackupDirectory -Recurse -Force
-            $LiveMoved = $false
-        }
-    }
-    else {
-        $ExistingManifest | Add-Member -NotePropertyName voice_revision -NotePropertyValue $VoiceRevision -Force
-        $ExistingManifest | Add-Member -NotePropertyName model_md5 -NotePropertyValue $ModelMd5 -Force
-        $ExistingManifest | Add-Member -NotePropertyName config_md5 -NotePropertyValue $ConfigMd5 -Force
-        $ExistingManifest | ConvertTo-Json | Set-Content -LiteralPath $Manifest -Encoding UTF8
-    }
-
-    Write-Host 'Piper TTS is ready.'
-    Write-Host "Executable: $PiperExe"
-    Write-Host "Voice:      $Model"
-}
-finally {
-    if (Test-Path -LiteralPath $TemporaryRoot) {
-        Remove-Item -LiteralPath $TemporaryRoot -Recurse -Force
-    }
-    if (Test-Path -LiteralPath $StagingDirectory) {
-        Remove-Item -LiteralPath $StagingDirectory -Recurse -Force
-    }
-    if ($LiveMoved -and (Test-Path -LiteralPath $BackupDirectory) -and
-        -not (Test-Path -LiteralPath $PiperDir)) {
-        Move-Item -LiteralPath $BackupDirectory -Destination $PiperDir
-        $LiveMoved = $false
-    }
-}
- -and
+        $ExistingManifest.piper_archive_sha256 -eq $PiperSha256 -and
         (Test-Piper $PiperExe)
     )
 
@@ -180,6 +99,9 @@ finally {
         Write-Host 'Downloading the pinned standalone Piper Windows build...'
         Invoke-WebRequest -Uri $PiperUrl -OutFile $Zip -UseBasicParsing
         $ArchiveSha256 = (Get-FileHash -LiteralPath $Zip -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($ArchiveSha256 -ne $PiperSha256) {
+            throw "Piper archive hash mismatch. Expected $PiperSha256 but received $ArchiveSha256."
+        }
         Expand-Archive -LiteralPath $Zip -DestinationPath $Expanded
         $StagedPiper = Join-Path $Expanded 'piper'
         $StagedExe = Join-Path $StagedPiper 'piper.exe'
