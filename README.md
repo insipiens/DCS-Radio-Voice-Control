@@ -48,21 +48,11 @@ Requires Windows 11 x64 and DCS World.
    .\install.bat
    ```
 
-   and press **Enter**. Wait for the installation to complete.
+   and press **Enter**. Installation may take several minutes the first time.
 
-7. Configure your microphone, audio output and push-to-talk:
+7. When installation is complete, the configuration page opens automatically. Select your microphone, audio output and push-to-talk button, then choose **Save configuration and start**.
 
-   ```powershell
-   .\configuration.bat
-   ```
-
-8. Start DCS Radio Voice Control:
-
-   ```powershell
-   .\run.bat
-   ```
-
-9. Start DCS and enter a mission.
+8. DCS Radio Voice Control will start and wait for DCS. Start DCS and enter a mission.
 
 For more detailed installation instructions, non-standard DCS locations and troubleshooting, see [INSTALLATION.md](INSTALLATION.md).
 

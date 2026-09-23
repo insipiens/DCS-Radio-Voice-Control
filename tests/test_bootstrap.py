@@ -43,6 +43,14 @@ class BootstrapTests(unittest.TestCase):
             self.assertIn("runtime\\python.exe", content, filename)
             self.assertNotIn("py -", content.lower(), filename)
 
+    def test_first_install_chains_configuration_into_voice_control(self) -> None:
+        installer = (ROOT / "install.bat").read_text(encoding="utf-8")
+        self.assertIn("%LOCALAPPDATA%\\DCSRadioVoiceControl\\config.json", installer)
+        self.assertIn("DRVC_FIRST_RUN", installer)
+        self.assertIn("configuration.bat\" --start-after-save", installer)
+        self.assertIn('if "%DRVC_CONFIG_EXIT%"=="10" goto start_voice_control', installer)
+        self.assertIn('call "%~dp0run.bat"', installer)
+
     def test_user_runner_launches_voice_control(self) -> None:
         runner = (ROOT / "run.bat").read_text(encoding="utf-8")
         diagnostic = (ROOT / "radio-menu-test.bat").read_text(encoding="utf-8")

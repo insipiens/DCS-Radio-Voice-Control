@@ -24,11 +24,14 @@ class ConfigurationUiTests(unittest.TestCase):
             "Automatic startup",
             "Start DCS Radio Voice Control with Windows",
             "Test accepted cue",
+            "Save configuration and start",
             "__TOKEN__",
+            "__START_AFTER_SAVE__",
         ):
             self.assertIn(label, PAGE)
         self.assertIn("X-DCS-Radio-Voice-Control-Token", PAGE)
         self.assertNotIn("X-DCS Radio Voice Control-Token", PAGE)
+        self.assertIn("startAfterSave?'/api/settings/start':'/api/settings'", PAGE)
 
 
 if __name__ == "__main__":

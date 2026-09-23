@@ -82,8 +82,8 @@ Administrator access is used to update the DCS program file; the other DCS Radio
 in the extracted folder or your own user folders.
 
 When installation succeeds, PowerShell prints JSON containing an `outcome`. On a first install
-this describes the installed DCS panel. When applying a later DCS Radio Voice Control patch it may instead say
-`updated_active_dcs_panel` or `already_current`.
+this describes the installed DCS panel. The configuration page then opens automatically. When applying a
+later DCS Radio Voice Control patch it may instead say `updated_active_dcs_panel` or `already_current`.
 
 ### If DCS is in the usual location
 
@@ -153,14 +153,14 @@ If you used explicit paths while installing, use the same options when checking 
 
 ## 5. Configure your microphone, sound, and push-to-talk
 
-Run:
+On a first installation, `install.bat` opens the local configuration page automatically. If you
+want to change the settings later, run:
 
 ```powershell
 .\configuration.bat
 ```
 
-Your browser should open the local configuration page. If it does not, open
-`http://127.0.0.1:34385/` yourself. The page exists only on your PC while the configuration
+If the browser does not open, browse to `http://127.0.0.1:34385/` while the configuration
 window is running.
 
 On the page:
@@ -174,27 +174,24 @@ On the page:
 4. Leave the default `base.en`, CPU, and command-matching settings selected for the first test.
 5. Optional: select **Start DCS Radio Voice Control with Windows**. This installs a per-user sign-in entry;
    it does not require administrator permission.
-6. Click **Save configuration** and wait for the message **Configuration saved.**
+6. On the first installation, click **Save configuration and start**. Your settings are saved,
+   the configuration program closes cleanly, and DCS Radio Voice Control starts automatically.
 
-You can now close the browser tab and press Ctrl+C in the configuration PowerShell window.
-Configuration is stored at `%LOCALAPPDATA%\DCSRadioVoiceControl\config.json` and is kept when you update
-the source files.
+When you open `configuration.bat` later, the button is **Save configuration** and does not
+start another controller. Configuration is stored at
+`%LOCALAPPDATA%\DCSRadioVoiceControl\config.json` and is retained during updates.
 
 ## 6. Run DCS Radio Voice Control in DCS
 
-1. In PowerShell, from the DCS Radio Voice Control folder, run:
-
-   ```powershell
-   .\run.bat
-   ```
-
-   `run.bat` first checks whether the installed DCS hook matches this DCS Radio Voice Control version. It asks
-   for administrator permission only if the hook must be installed or updated. If DCS was
-   already running when an update was needed, close DCS completely and restart it when asked.
-2. Leave that PowerShell window open.
-3. Start DCS and enter a mission in which the radio menu is available. DCS Radio Voice Control will wait for a
+1. After **Save configuration and start**, leave the Terminal window open. DCS Radio Voice Control
+   is now running and waiting for DCS.
+2. Start DCS and enter a mission in which the radio menu is available. DCS Radio Voice Control will wait for a
    live DCS command catalogue.
-4. Hold your configured HOTAS button, or Space, speak a command, and then release the button.
+3. Hold your configured HOTAS button, or Space, speak a command, and then release the button.
+
+For later manual starts, run `.\run.bat` from the DCS Radio Voice Control folder. `run.bat`
+checks whether the installed DCS hook matches this version and asks for administrator permission
+only if the hook must be installed or updated.
 
 For the first flight, start with commands that are easy to observe and do not trigger an
 aircraft action:
@@ -361,7 +358,7 @@ improves the overall result without interfering with DCS.
 | DCS Radio Voice Control cannot locate DCS | Use `--dcs-install` and `--saved-games` as shown in step 3. This is expected for a Steam library on another drive. |
 | More than one DCS or Saved Games folder was found | Supply both explicit paths so the installer cannot choose the wrong one. |
 | A download fails | Check the internet connection, VPN/proxy, and antivirus history, then run the same batch file again. Setup safely reuses downloads that already passed verification. |
-| The browser configuration page does not open | Leave `configuration.bat` running and browse to `http://127.0.0.1:34385/`. If the port is already in use, close the older configuration window first. |
+| The browser configuration page does not open | Leave the configuration window running and browse to `http://127.0.0.1:34385/`. If the port is already in use, close the older configuration window first. |
 | The microphone test reports silence | Select a different recording device and check Windows **Settings > System > Sound > Input** and microphone privacy permissions. |
 | The HOTAS is not listed | Connect and power it before opening the configuration page, then restart `configuration.bat`. Use **Space only** as a fallback. |
 | DCS Radio Voice Control waits for DCS indefinitely | Enter an active mission, confirm the installation status is healthy, and make sure only one DCS Radio Voice Control runner is open. |
