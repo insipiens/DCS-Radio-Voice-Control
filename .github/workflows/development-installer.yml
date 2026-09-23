@@ -1,0 +1,48 @@
+name: Development installer
+
+on:
+  push:
+    branches: [development]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: development-installer
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --yes --no-progress
+      - name: Compile installer
+        shell: pwsh
+        run: |
+          $compiler = @(
+            "${env:ProgramFiles(x86)}\Inno Setup 7\ISCC.exe",
+            "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $compiler) { throw 'Inno Setup compiler not found' }
+          & $compiler installer\DCSRadioVoiceControl.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path dist\DCS-Radio-Voice-Control-Setup.exe)) { throw 'Installer output not found' }
+      - name: Publish development installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $asset = 'dist/DCS-Radio-Voice-Control-Setup.exe'
+          $body = "Development installer built from commit $env:GITHUB_SHA. This is a development build."
+          gh release view development-installer | Out-Null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create development-installer $asset --target development --title 'Development installer' --notes $body --prerelease --latest=false
+          } else {
+            gh release upload development-installer $asset --clobber
+            gh release edit development-installer --notes $body --prerelease --latest=false
+          }
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
