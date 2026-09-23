@@ -9,6 +9,7 @@ from dcs_radio_voice_control.alias_store import (
     record_pending_alias,
     record_pending_meta_alias,
     reviewed_alias,
+    reviewed_aliases,
     reviewed_meta_alias,
 )
 
@@ -53,6 +54,24 @@ class AliasStoreTests(unittest.TestCase):
                 "Flight > Rejoin Formation",
             )
             self.assertIsNone(reviewed_alias("Flight, rejoyed.", path))
+
+    def test_all_reviewed_aliases_are_normalized_and_nulls_are_ignored(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "pending_aliases.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "Two!": "Wingman",
+                        "Element": "Second Element",
+                        "unused": None,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                reviewed_aliases(path),
+                {"two": "Wingman", "element": "Second Element"},
+            )
 
     def test_reviewed_meta_alias_uses_meta_store(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

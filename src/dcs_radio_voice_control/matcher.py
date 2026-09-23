@@ -7,16 +7,18 @@ from difflib import SequenceMatcher
 import re
 import unicodedata
 
+from .alias_store import reviewed_aliases
 from .protocol import MenuItem
 
 
 MINIMUM_SCORE = 0.60
 AMBIGUITY_MARGIN = 0.02
 MAX_PROMPT_CHARACTERS = 1_500
-_SCOPES = ("second element", "wingman", "flight", "atc")
+_SCOPES = ("second element", "ground crew", "wingman", "flight", "other", "atc")
 _LEADING_POLITENESS = {"please"}
 _RECIPIENT_VERBS = {"ask", "order", "tell"}
 _RECIPIENT_ARTICLES = {"my", "the"}
+_RECIPIENT_CONNECTORS = {"to"}
 _EXCLUSIVE_TERMS = (
     frozenset({"start", "stop"}),
     frozenset({"on", "off"}),
@@ -46,6 +48,13 @@ class MatchResult:
         return self.candidates[0] if self.candidates else None
 
 
+@dataclass(frozen=True, slots=True)
+class RecipientScope:
+    scope: str
+    command: str
+    alias: str | None = None
+
+
 def normalize_phrase(value: str) -> str:
     decomposed = unicodedata.normalize("NFKD", value.casefold())
     ascii_text = "".join(character for character in decomposed if not unicodedata.combining(character))
@@ -72,23 +81,8 @@ def build_vocabulary_prompt(
     labels: list[str] = []
     seen: set[str] = set()
     for label in (
-        "Show Menu",
-        "Previous Menu",
-        "Exit Menu",
-        "F1",
-        "F2",
-        "F3",
-        "F4",
-        "F5",
-        "F6",
-        "F7",
-        "F8",
-        "F9",
-        "F10",
-        "F11",
-        "F12",
-        "Back",
-        "Close Menu",
+        "Show Menu", "Previous Menu", "Exit Menu", "F1", "F2", "F3", "F4",
+        "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "Back", "Close Menu",
     ):
         candidate = prefix + ", ".join((*labels, label)) + "."
         if len(candidate) > maximum_characters:
@@ -123,19 +117,36 @@ def match_catalogue(
     if not spoken or not items:
         return MatchResult("no_match", ())
 
-    scope = _explicit_scope(spoken)
+    recipient = recipient_scope(spoken)
+    scope = recipient.scope if recipient is not None else None
+    command = recipient.command if recipient is not None else spoken
+    if not command:
+        return MatchResult("no_match", ())
+
+    scoped_items = tuple(
+        item
+        for item in items
+        if scope is None or normalize_phrase(item.path[0]) == scope
+    )
+    if not scoped_items:
+        return MatchResult("no_match", ())
+
+    # Action aliases are composable with recipient aliases.  The recipient is
+    # resolved first and contributes no action score; the remaining command may
+    # then map exactly to a leaf/action target inside that recipient's scope.
+    alias_target = reviewed_aliases().get(command)
+    if alias_target is not None and normalize_phrase(alias_target) not in _SCOPES:
+        return match_reviewed_alias(alias_target, scoped_items)
+
     all_ranked: list[RankedMatch] = []
-    for item in items:
-        item_scope = normalize_phrase(item.path[0])
-        if scope is not None and item_scope != scope:
-            continue
+    for item in scoped_items:
         forms = _spoken_forms(item)
         score = max(
-            _similarity(spoken, form, contextual=contextual)
+            _similarity(command, form, contextual=contextual)
             for form, contextual in forms
         )
-        score = max(score, _hierarchical_similarity(spoken, item))
-        exact = any(spoken == form for form, _ in forms)
+        score = max(score, _hierarchical_similarity(command, item))
+        exact = any(command == form for form, _ in forms)
         all_ranked.append(RankedMatch(item, score, exact=exact))
 
     all_ranked.sort(key=lambda match: (-match.score, match.item.action_id))
@@ -205,8 +216,6 @@ def _hierarchical_similarity(spoken: str, item: MenuItem) -> float:
     if len(spoken_words) <= len(leaf_words):
         return leaf_score
 
-    # For deeper paths, the middle menu node is discriminating evidence while
-    # the root is shared by every command in that radio scope.
     context = path[1:-1] if len(path) > 2 else path[:-1]
     context_score = max(
         (_best_window_similarity(segment, spoken) for segment in context),
@@ -261,7 +270,15 @@ def _is_subsequence(needle: list[str], haystack: list[str]) -> bool:
     return position == len(needle)
 
 
-def _explicit_scope(spoken: str) -> str | None:
+def recipient_scope(transcript: str) -> RecipientScope | None:
+    """Split an exact leading recipient from the command it constrains.
+
+    Canonical DCS recipient names remain valid directly. Additional spoken
+    vocabulary comes only from reviewed aliases whose targets are recipient
+    menu nodes. The recipient is removed before action scoring, so an alias can
+    constrain the catalogue but can never improve the command score.
+    """
+    spoken = normalize_phrase(transcript)
     words = spoken.split()
     while words and words[0] in _LEADING_POLITENESS:
         words.pop(0)
@@ -269,8 +286,28 @@ def _explicit_scope(spoken: str) -> str | None:
         words.pop(0)
         if words and words[0] in _RECIPIENT_ARTICLES:
             words.pop(0)
+
+    configured: list[tuple[tuple[str, ...], str]] = []
+    for alias, target in reviewed_aliases().items():
+        scope = normalize_phrase(target)
+        alias_words = tuple(normalize_phrase(alias).split())
+        if scope in _SCOPES and alias_words:
+            configured.append((alias_words, scope))
+    configured.sort(key=lambda entry: (-len(entry[0]), entry[0]))
+
+    for alias_words, scope in configured:
+        if tuple(words[: len(alias_words)]) != alias_words:
+            continue
+        remainder = words[len(alias_words) :]
+        while remainder and remainder[0] in _RECIPIENT_CONNECTORS:
+            remainder.pop(0)
+        return RecipientScope(scope, " ".join(remainder), " ".join(alias_words))
+
     prefix = " ".join(words)
     for scope in _SCOPES:
         if prefix == scope or prefix.startswith(scope + " "):
-            return scope
+            remainder = words[len(scope.split()) :]
+            while remainder and remainder[0] in _RECIPIENT_CONNECTORS:
+                remainder.pop(0)
+            return RecipientScope(scope, " ".join(remainder))
     return None

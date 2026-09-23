@@ -22,7 +22,7 @@ class ConfigurationStoreTests(unittest.TestCase):
                 encoding="utf-8",
             )
             document = load_document(path)
-        self.assertEqual(document["schema"], 6)
+        self.assertEqual(document["schema"], 7)
         self.assertEqual(document["microphone"]["name"], "VR")
         self.assertEqual(document["matching"]["minimum_score"], DEFAULT_MINIMUM_SCORE)
         self.assertEqual(document["matching"]["minimum_lead"], DEFAULT_MINIMUM_LEAD)
@@ -31,6 +31,16 @@ class ConfigurationStoreTests(unittest.TestCase):
         self.assertEqual(document["stt"]["use_gpu"], False)
         self.assertEqual(document["audio"], {"output_device": None})
         self.assertEqual(document["startup"], {"start_with_windows": False})
+        self.assertTrue(document["setup_complete"])
+
+    def test_new_configuration_starts_incomplete_and_persists_partial_state(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "config.json"
+            document = load_document(path)
+            self.assertFalse(document["setup_complete"])
+            document["ptt"] = {"mode": "keyboard"}
+            save_document(document, path)
+            self.assertFalse(load_document(path)["setup_complete"])
 
     def test_audio_and_hotas_settings_round_trip(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

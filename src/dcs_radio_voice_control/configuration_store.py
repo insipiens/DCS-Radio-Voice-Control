@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 
-SCHEMA = 6
+SCHEMA = 7
 DEFAULT_MINIMUM_SCORE = 0.70
 DEFAULT_MINIMUM_LEAD = 0.10
 MINIMUM_SCORE_RANGE = (0.60, 0.95)
@@ -26,6 +26,7 @@ def config_path() -> Path:
 def default_document() -> dict[str, Any]:
     return {
         "schema": SCHEMA,
+        "setup_complete": False,
         "matching": {
             "minimum_score": DEFAULT_MINIMUM_SCORE,
             "minimum_lead": DEFAULT_MINIMUM_LEAD,
@@ -51,6 +52,11 @@ def load_document(path: Path | None = None) -> dict[str, Any]:
         raise OSError(f"DCS Radio Voice Control configuration is not a JSON object: {target}")
     document.update(raw)
     document["schema"] = SCHEMA
+    # Configurations written before schema 7 predate the explicit first-run
+    # marker and therefore represent completed existing installations.
+    document["setup_complete"] = _validated_setup_complete(
+        raw.get("setup_complete", True)
+    )
     document["matching"] = _validated_matching(raw.get("matching"))
     document["stt"] = _validated_stt(raw.get("stt"))
     document["ptt"] = _validated_ptt(raw.get("ptt"))
@@ -77,6 +83,9 @@ def save_document(document: Mapping[str, Any], path: Path | None = None) -> Path
 def load_document_from_mapping(value: Mapping[str, Any]) -> dict[str, Any]:
     result = dict(value)
     result["schema"] = SCHEMA
+    result["setup_complete"] = _validated_setup_complete(
+        value.get("setup_complete", False)
+    )
     result["matching"] = _validated_matching(value.get("matching"))
     result["stt"] = _validated_stt(value.get("stt"))
     result["ptt"] = _validated_ptt(value.get("ptt"))
@@ -87,6 +96,23 @@ def load_document_from_mapping(value: Mapping[str, Any]) -> dict[str, Any]:
     if microphone is not None and not isinstance(microphone, dict):
         raise ValueError("microphone must be an object")
     return result
+
+
+def setup_complete(path: Path | None = None) -> bool:
+    """Return whether first-run configuration was explicitly completed.
+
+    Legacy configuration files predate this marker and are treated as complete.
+    A new partial configuration created while learning PTT contains the explicit
+    false marker, so closing the wizard cannot accidentally suppress first run.
+    """
+    target = path or config_path()
+    try:
+        raw = json.loads(target.read_text(encoding="utf-8"))
+    except (FileNotFoundError, OSError, json.JSONDecodeError, UnicodeDecodeError):
+        return False
+    if not isinstance(raw, dict):
+        return False
+    return raw.get("setup_complete", True) is True
 
 
 def update_settings(
@@ -114,6 +140,12 @@ def update_settings(
     if microphone is not None:
         updated["microphone"] = dict(microphone)
     return load_document_from_mapping(updated)
+
+
+def _validated_setup_complete(value: object) -> bool:
+    if not isinstance(value, bool):
+        raise ValueError("setup_complete must be true or false")
+    return value
 
 
 def _validated_matching(value: object) -> dict[str, float]:

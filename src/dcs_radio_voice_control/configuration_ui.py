@@ -110,6 +110,9 @@ class ConfigurationApplication:
             cue_volume=request.get("cue_volume"),
             start_with_windows=start_with_windows,
         )
+        # HOTAS/keyboard learning may save partial choices; only the final
+        # settings save completes first-run setup.
+        document["setup_complete"] = True
         target = save_document(document)
         try:
             set_autostart_enabled(start_with_windows)

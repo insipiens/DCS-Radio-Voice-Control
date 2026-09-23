@@ -31,6 +31,82 @@ class TranscriptionMetrics:
     model_load_seconds: float
 
 
+def _acoustic_metrics(document: object) -> dict[str, object]:
+    """Summarise whisper.cpp verbose diagnostics without treating them as a gate."""
+    if not isinstance(document, dict):
+        return {"available": False}
+    raw_segments = document.get("segments")
+    if not isinstance(raw_segments, list):
+        return {"available": False}
+
+    segments: list[dict[str, object]] = []
+    all_probabilities: list[float] = []
+    avg_logprobs: list[float] = []
+    no_speech_probabilities: list[float] = []
+    for raw_segment in raw_segments:
+        if not isinstance(raw_segment, dict):
+            continue
+        words = raw_segment.get("words")
+        probabilities = (
+            [
+                float(word["probability"])
+                for word in words
+                if isinstance(word, dict)
+                and isinstance(word.get("probability"), (int, float))
+            ]
+            if isinstance(words, list)
+            else []
+        )
+        avg_logprob = raw_segment.get("avg_logprob")
+        no_speech = raw_segment.get("no_speech_prob")
+        segment: dict[str, object] = {
+            "token_count": len(probabilities),
+        }
+        if probabilities:
+            segment.update(
+                token_probability_mean=round(sum(probabilities) / len(probabilities), 6),
+                token_probability_min=round(min(probabilities), 6),
+            )
+            all_probabilities.extend(probabilities)
+        if isinstance(avg_logprob, (int, float)):
+            value = float(avg_logprob)
+            segment["avg_logprob"] = round(value, 6)
+            avg_logprobs.append(value)
+        if isinstance(no_speech, (int, float)):
+            value = float(no_speech)
+            segment["no_speech_probability"] = round(value, 6)
+            no_speech_probabilities.append(value)
+        segments.append(segment)
+
+    result: dict[str, object] = {
+        "available": bool(segments),
+        "segment_count": len(segments),
+        "segments": segments,
+    }
+    if all_probabilities:
+        result.update(
+            token_count=len(all_probabilities),
+            token_probability_mean=round(sum(all_probabilities) / len(all_probabilities), 6),
+            token_probability_min=round(min(all_probabilities), 6),
+        )
+    if avg_logprobs:
+        result.update(
+            avg_logprob_mean=round(sum(avg_logprobs) / len(avg_logprobs), 6),
+            avg_logprob_min=round(min(avg_logprobs), 6),
+        )
+    if no_speech_probabilities:
+        result.update(
+            no_speech_probability_mean=round(
+                sum(no_speech_probabilities) / len(no_speech_probabilities), 6
+            ),
+            no_speech_probability_max=round(max(no_speech_probabilities), 6),
+        )
+    language_probability = document.get("detected_language_probability")
+    if isinstance(language_probability, (int, float)):
+        result["detected_language_probability"] = round(float(language_probability), 6)
+    return result
+
+
 class WhisperCpp:
     """Keep one native whisper.cpp model resident and send audio from memory."""
 
@@ -104,7 +180,10 @@ class WhisperCpp:
         assert self._port is not None
         boundary = "DCSRadioVoiceControl-" + uuid.uuid4().hex
         fields = {
-            "response_format": "json",
+            "response_format": "verbose_json",
+            # Language is fixed to English; skip the server's additional,
+            # expensive language-detection pass.
+            "no_language_probabilities": "true",
             "language": "en",
             "prompt": (prompt or "").strip(),
         }
@@ -133,6 +212,7 @@ class WhisperCpp:
             model_load_seconds=round(self._load_seconds, 3),
         )
         self.last_metrics = asdict(metrics)
+        self.last_metrics["acoustic"] = _acoustic_metrics(document)
         value = document.get("text", "") if isinstance(document, dict) else ""
         return " ".join(str(value).split())
 

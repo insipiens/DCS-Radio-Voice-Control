@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from dcs_radio_voice_control.stt import MODEL_NAME, WhisperCpp, _multipart
+from dcs_radio_voice_control.stt import MODEL_NAME, WhisperCpp, _acoustic_metrics, _multipart
 
 
 class SttTests(unittest.TestCase):
@@ -39,6 +39,42 @@ class SttTests(unittest.TestCase):
         self.assertIn(b"Wingman, Biggin Hill", body)
         self.assertIn(b"RIFF-test", body)
         self.assertTrue(body.endswith(b"--boundary--\r\n"))
+
+    def test_multipart_requests_verbose_diagnostics(self) -> None:
+        body = _multipart(
+            "boundary",
+            {
+                "response_format": "verbose_json",
+                "no_language_probabilities": "true",
+            },
+            "audio.wav",
+            b"RIFF-test",
+        )
+        self.assertIn(b"verbose_json", body)
+        self.assertIn(b"no_language_probabilities", body)
+
+    def test_acoustic_metrics_summarise_verbose_response(self) -> None:
+        metrics = _acoustic_metrics({
+            "detected_language_probability": 0.98,
+            "segments": [{
+                "avg_logprob": -0.25,
+                "no_speech_prob": 0.04,
+                "words": [
+                    {"word": " two", "probability": 0.9},
+                    {"word": " cover", "probability": 0.7},
+                    {"word": " me", "probability": 0.8},
+                ],
+            }],
+        })
+        self.assertTrue(metrics["available"])
+        self.assertEqual(metrics["token_count"], 3)
+        self.assertEqual(metrics["token_probability_mean"], 0.8)
+        self.assertEqual(metrics["token_probability_min"], 0.7)
+        self.assertEqual(metrics["avg_logprob_mean"], -0.25)
+        self.assertEqual(metrics["no_speech_probability_max"], 0.04)
+
+    def test_acoustic_metrics_report_unavailable_for_basic_json(self) -> None:
+        self.assertEqual(_acoustic_metrics({"text": "Cover me"}), {"available": False})
 
 
 if __name__ == "__main__":

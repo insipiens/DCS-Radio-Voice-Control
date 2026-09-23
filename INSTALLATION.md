@@ -215,9 +215,9 @@ For a familiar command, omit `Show` and give the complete command directly:
 Flight, Cover Me
 ```
 
-DCS Radio Voice Control attempts that command once without putting you into guided navigation. Repeating the
-same completed demand does not create a queue of additional menu selections; a different valid
-command or menu choice must occur before the same command can be issued again.
+DCS Radio Voice Control attempts that command once without putting you into guided navigation. A
+new push-to-talk press is a new explicit pilot demand, so the same command can be deliberately
+issued again on the next press without first saying something different.
 
 To move back up or close the displayed menu:
 
@@ -238,20 +238,24 @@ Selects DCS's **F12 Exit** behaviour and closes the radio menu. You may also say
 never sends or repeats a DCS action. If Alan has not spoken, DCS Radio Voice Control reports `Nothing spoken
 to repeat.`
 
-Rejected phrases that resemble a command are recorded for review in:
+Action aliases are stored in:
 
 ```text
-%LOCALAPPDATA%\DCSRadioVoiceControl\pending_aliases.json
+%LOCALAPPDATA%\DCSRadioVoiceControl\aliases.json
 ```
 
-Application-side phrases such as an unrecognised `List` request are recorded separately in
-`pending_meta_aliases.json` in the same folder. A `null` value is only a candidate and has no
-effect. To approve an alias, replace `null` with one exact, unambiguous command path, for
-example:
+On first use the file is created with the standard recipient and formation shorthand, including
+`2`/`two`/`number two` → `Wingman`, `3`/`three`/`element` → `Second Element`, and the action
+aliases `join up`/`rejoin`, `abreast`/`line abreast`, and `trail`/`echelon trail`. Existing user
+aliases are never overwritten by an update.
 
-```json
-"flight rejoin": "Flight > Rejoin Formation"
-```
+Recipient aliases only select the corresponding live DCS subtree; they contribute no matching
+score. The remaining command must still resolve safely inside that subtree. Action aliases can
+be composed with them, so `Two, Rejoin` resolves `Rejoin Formation` only within `Wingman`.
+
+Rejected phrases that resemble a command may be added to the same file with a `null` value for
+later review. A `null` value has no effect until you replace it with an exact target. Application-
+side phrases such as an unrecognised `List` request remain separate in `pending_meta_aliases.json`.
 
 Reviewed mappings are loaded automatically. Their targets must exactly identify one current
 DCS command; an invalid or ambiguous mapping is rejected rather than fuzzily reinterpreted.
