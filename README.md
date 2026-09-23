@@ -1,267 +1,177 @@
 # DCS Radio Voice Control
 
-DCS Radio Voice Control is a local, deterministic voice-control layer for DCS World. It lets a
-pilot hold a HOTAS push-to-talk button, speak a command from the live DCS radio catalogue,
-and execute it only when the match clears explicit safety thresholds.
+DCS Radio Voice Control lets you operate the DCS radio menu by voice.
 
-The working path is:
+Hold your HOTAS push-to-talk button, say a command such as:
 
-```text
-HOTAS PTT -> microphone PCM -> local whisper.cpp -> deterministic matcher
-          -> revision-checked DCS action -> local Piper/SDL feedback
-```
+> “Flight, Cover Me”
 
-No cloud service or generative command interpretation is used. Audio stays on the machine,
-and the live path does not write captured speech or synthesized responses to temporary files.
+and release the button. The command is matched against the radio options actually available in DCS and, when the match is sufficiently clear, is executed.
 
-> **Renaming from CombatAI:** this version is a clean break. Before installing it, close DCS
-> and run `uninstall.bat` from the former CombatAI folder. The new installer deliberately
-> refuses to load alongside the old hook.
+Speech recognition runs locally on your PC. Recorded speech is not sent to a cloud service.
 
-## Current behaviour
+## Features
 
-DCS Radio Voice Control currently provides:
+- Control DCS radio commands using your voice.
+- Uses the live DCS radio menu, including mission-specific F10 commands.
+- HOTAS push-to-talk or keyboard push-to-talk.
+- Direct commands for things you already know.
+- Guided voice navigation for commands you don't remember.
+- Spoken command lists as a quick in-cockpit aide-mémoire.
+- Local speech recognition using Whisper.
+- Configurable command aliases, microphone, audio output and HOTAS button.
+- Optional automatic startup with Windows; the application waits for DCS when it is not needed.
 
-- live command discovery from DCS over localhost UDP;
-- standard radio and mission-generated commands from the active menu;
-- voice navigation of the visible DCS radio menu without selecting an action;
-- spoken F11 Previous Menu and F12 Exit controls;
-- guarded execution against the same live catalogue revision;
-- safe recovery when the DCS menu changes during recognition;
-- Windows microphone selection and SDL HOTAS push-to-talk;
-- a persistent native whisper.cpp worker with the selected model kept resident;
-- local `base.en`, `small.en`, and `medium.en` model choices;
-- catalogue-derived Whisper vocabulary prompting;
-- deterministic scoring with a configurable floor and runner-up lead;
-- Piper's Alan voice as raw PCM, played from memory through SDL at the model's native rate;
-- selectable audio output and interruptible speech using Piper's native voice settings;
-- concise accepted/rejected cues through the same output device;
-- rotating text and JSONL development logs.
+## Quick start
 
-An accepted result means the Lua action completed. DCS does not expose whether a mission
-script subsequently produced its intended gameplay effect.
+Requires Windows 11 x64 and DCS World.
 
-## Requirements
+1. Download and extract `DCS-Radio-Voice-Control.zip` to a permanent folder in your Windows user directory, for example:
 
-For a beginner-friendly walkthrough from download through the first in-game test, see the
-[installation guide](INSTALLATION.md).
+   `C:\Users\your-name\DCS-Radio-Voice-Control`
 
-- Windows 11 x64;
-- DCS World;
-- a local clone or extracted download of this repository.
+   Do not install it in `Program Files` or run it directly from the ZIP. Keep this folder after installation — it is the application folder.
 
-Python does not need to be installed. `setup.bat` downloads the official CPython 3.13
-embeddable runtime, the pinned pygame-ce wheel, whisper.cpp, the selected Whisper model, and
-Piper. Each downloaded artifact is verified before it is installed. Nothing is installed
-system-wide, `PATH` is not changed, and `pip` is not required.
+2. Open the extracted `DCS-Radio-Voice-Control` folder and run:
 
-```powershell
-.\setup.bat
-```
+   ```powershell
+   .\install.bat
+   ```
 
-The default speech-recognition model is `base.en`. Install another supported model only
-when you want to compare it:
+3. Configure your microphone, audio and push-to-talk:
 
-```powershell
-.\setup-stt.bat small.en
-.\setup-stt.bat medium.en
+   ```powershell
+   .\configuration.bat
+   ```
 
-# Optional NVIDIA CUDA 12 worker; CPU remains the default
-.\setup-stt.bat base.en cuda12
-```
+4. Start DCS Radio Voice Control:
 
-Only the requested model is downloaded. Installed models appear in the configuration page.
+   ```powershell
+   .\run.bat
+   ```
 
-## Install the DCS hook
+5. Start DCS and enter a mission.
 
-`run.bat` now checks the hook before starting voice control. If installation or an update is
-needed, it requests administrator permission and performs the guarded installation
-automatically. When the hook is already current, there is no UAC prompt.
+For a step-by-step installation guide, non-standard DCS locations and troubleshooting, see [INSTALLATION.md](INSTALLATION.md).
 
-For an initial installation, or when supplying nonstandard paths explicitly, close DCS and run:
+## Using DCS Radio Voice Control
 
-```powershell
-.\install.bat
-```
+There are three ways to use it: **Direct**, **List** and **Show**.
 
-The installer requests administrator permission only for the DCS installation directory. It
-finds standard standalone and Steam locations, backs up the exact active radio-panel file
-under `Saved Games\DCS\Scripts\DCSRadioVoiceControl\backups`, appends the DCS Radio Voice Control hook atomically,
-and records hashes in `Scripts\DCSRadioVoiceControl\install.json`.
+### Direct commands
 
-After replacing the DCS Radio Voice Control source files with a newer patch, `run.bat` performs the same check
-and update. If the
-installed panel and its original backup still match the recorded hashes, the installer updates
-only the DCS Radio Voice Control overlay in place and preserves the original backup for uninstall. It refuses
-the update if DCS, VAICOM, or another modification changed the installed panel meanwhile.
+If you know the command, simply say it:
 
-If discovery finds no installation or more than one, provide both paths:
+> “Flight, Cover Me”
 
-```powershell
-.\install.bat `
-  --dcs-install "C:\Program Files\Eagle Dynamics\DCS World" `
-  --saved-games "$env:USERPROFILE\Saved Games\DCS"
-```
+> “Two, Rejoin”
 
-DCS Radio Voice Control refuses an ambiguous installation or an unrecognised existing modification. Check
-the installed state with:
+> “Ground Crew, Request Rearming”
 
-```powershell
-.\runtime\python.exe tools\install.py status
-```
+The command is resolved against the options currently available in DCS and executed directly. You do not need to open or navigate the radio menu first.
 
-To remove DCS Radio Voice Control completely:
+### List — tell me what's available
 
-```powershell
-.\uninstall.bat
-```
+`List` is an audible aide-mémoire. It tells you the choices without opening or changing the DCS radio menu.
 
-The uninstaller restores the exact DCS file backed up during installation, then removes
-DCS Radio Voice Control's Saved Games state, local settings and logs, private runtime, Whisper workers and
-models, Piper files, and setup remnants. It verifies the cleanup and returns an error if any
-managed artifact remains. The downloaded source folder is retained so the uninstaller can
-finish reliably and because it may be a Git checkout; delete that folder manually afterward
-if it was an extracted download.
+For example:
 
-Removal is refused if the active DCS file changed after installation or if a DCS Radio Voice Control hook
-exists without a usable manifest. This prevents DCS Radio Voice Control from overwriting a DCS update,
-VAICOM, or another modification.
+> “List ATC commands”
 
-## Configure and run
+responds with the currently available ATC choices.
 
-Open the local configuration page:
+You can also ask for another part of the menu:
+
+> “List Flight commands”
+
+> “List F10 commands”
+
+Nothing is selected or executed by a `List` command.
+
+### Show — let me navigate the menu
+
+`Show` opens the DCS radio menu and starts guided navigation.
+
+For example:
+
+> “Show Menu”
+
+The DCS radio menu appears. You can then speak one of the choices shown on screen:
+
+> “Flight”
+
+If that opens another menu, speak the next displayed choice:
+
+> “Formation”
+
+> “Go Line Abreast”
+
+Each phrase selects only an option on the menu currently displayed. Selecting a submenu moves to that submenu; selecting a command executes it and finishes guided navigation.
+
+You can also select displayed choices by saying their function key:
+
+> “F2”
+
+`Previous Menu` or `F11` goes back one level.
+
+`Exit Menu` or `F12` closes the radio menu.
+
+### Command aliases
+
+DCS terminology is not always what a pilot would naturally say. DCS Radio Voice Control therefore supports configurable aliases.
+
+For example:
+
+> “Two, Rejoin”
+
+can resolve to:
+
+> `Wingman > Rejoin Formation`
+
+Aliases can be edited without changing the program. They change the vocabulary used to identify a command; they do not allow an unrelated command to be selected.
+
+## Configuration
+
+Run:
 
 ```powershell
 .\configuration.bat
 ```
 
-The page is served only on `127.0.0.1:34385`. It configures and tests the microphone,
-microphone input and speech/cue output together, plus the installed Whisper model, matching
-thresholds, HOTAS PTT binding, and the optional **Start DCS Radio Voice Control with Windows** controller.
-GPU recognition becomes available only after the pinned CUDA 12 worker is installed. It is
-experimental so its latency and DCS resource impact can be measured on the target machine;
-CPU remains the default.
+The configuration page lets you select and test:
 
-Settings are stored in `%LOCALAPPDATA%\DCSRadioVoiceControl\config.json`. Logs are stored beneath
-`%LOCALAPPDATA%\DCSRadioVoiceControl\logs`. JSONL recognition events include the model, CPU/GPU
-mode, audio duration, inference time, real-time factor, model-load time, transcript, ranked
-candidates, best and runner-up scores, acceptance or rejection, and DCS acknowledgement.
-Captured audio is neither logged nor retained.
+- microphone;
+- audio output;
+- HOTAS push-to-talk;
+- speech-recognition model;
+- command-matching settings;
+- audio feedback; and
+- automatic startup with Windows.
 
-For manual operation, start DCS Radio Voice Control before or after starting DCS:
+If automatic startup is enabled, DCS Radio Voice Control waits quietly until DCS is running and activates voice control when required.
 
-```powershell
-.\run.bat
-```
+## Updating
 
-Hold Space or the configured HOTAS button, speak, and release. A command is sent immediately
-only when it clears both configured matching gates. PTT stops active SDL playback, terminates
-Piper if synthesis is still running, discards that response, and starts microphone capture.
-Alan uses the Piper voice model's native synthesis settings.
+You normally do not need to uninstall before updating.
 
-When **Start DCS Radio Voice Control with Windows** is enabled, a small controller waits in the background.
-It starts the voice worker only after DCS and an active mission are detected, so Whisper,
-Piper, microphone capture, SDL, and optional CUDA resources remain unloaded at other times.
-It stops the worker again when DCS exits. Controller states are recorded as **Waiting for
-DCS**, **Loading**, **Ready**, **Restart DCS**, or **Repair required**. Only one controller can
-run at a time.
+Close DCS and DCS Radio Voice Control, copy the files from the new version over your existing installation, and run `run.bat`.
 
-DCS Radio Voice Control matches the live Wingman, Flight, Second Element, ATC, Ground Crew, and mission/F10
-branches. A unique exact path is not rejected merely because another location offers the same
-leaf command. Operational qualifiers such as start/stop and left/right must agree, and a command
-remembered from an earlier menu revision is described as unavailable rather than executed.
+Your configuration and downloaded speech models are retained.
 
-Useful local spoken commands include:
+See [INSTALLATION.md](INSTALLATION.md) for detailed update instructions.
 
-```text
-List flight commands
-List ATC commands
-List mission commands
-Show ATC commands
-Show F10
-Previous Menu
-Exit Menu
-Repeat
-```
+## Uninstalling
 
-`List` speaks the immediate choices without changing the DCS display. `Show` starts guided menu
-mode. DCS Radio Voice Control keeps the DCS menu visible, and every following phrase is allowed to select only
-an item on that displayed menu. Submenus advance one level; a leaf executes and ends guided mode.
-The displayed item may be selected by name or by its bare `F1`-`F10` key. Function keys are
-resolved only against the visible menu; `Show F5` remains non-executing, while `F5` selects the
-displayed item.
-For example: `Show ATC` opens the DCS F5 ATC menu, `Show Biggin Hill` selects that displayed
-submenu, and `Request Start-Up` executes the displayed command. A familiar complete command such
-as `Flight, Cover Me` can instead be issued directly without entering guided mode. Repetitions of
-the same completed command are ignored until a different valid demand is made. List, show,
-submenu navigation, F11/F12 controls, and repeat cannot fall through to unrelated action matching.
-`Previous Menu` (or `F11`) selects DCS's displayed Previous Menu control; `Exit Menu` (or `F12`)
-closes the radio menu. `Repeat` only says Alan's last spoken response again and never repeats an
-executed DCS action.
-
-Rejected action and application phrases are recorded separately under
-`%LOCALAPPDATA%\DCSRadioVoiceControl`. Replacing a candidate's `null` value with an exact unique
-command path activates that reviewed alias; configured targets are never fuzzily reinterpreted.
-
-## Developer diagnostics
-
-These test utilities are not part of normal installation or everyday use:
+Close DCS and run:
 
 ```powershell
-.\microphone.bat
-.\recording-test.bat
-.\transcription-test.bat
-.\matching-test.bat
-.\radio-menu-test.bat
+.\uninstall.bat
 ```
 
-Only one Windows process can own DCS Radio Voice Control's UDP listener. Close `run.bat` before starting a
-radio-menu or matching diagnostic.
+The uninstaller restores the DCS file backed up during installation and removes the files managed by DCS Radio Voice Control.
 
-End-user builds are created with:
+See [INSTALLATION.md](INSTALLATION.md) if the uninstaller reports that DCS has changed since installation.
 
-```powershell
-.\runtime\python.exe .\tools\package_release.py
-```
+## More information
 
-This produces `dist\DCS-Radio-Voice-Control.zip` with the application files at the archive
-root. GitHub's automatically named branch/source archives are for development only.
-
-If no catalogue arrives, confirm that a mission is active, check installer status, verify
-that DCS owns UDP port `34383` and DCS Radio Voice Control owns `34384`, then inspect
-`Saved Games\DCS\Logs\dcs.log`.
-
-The repository does not distribute Eagle Dynamics' Lua implementation. The installed panel
-is generated from the file already present on the user's computer and must be reinstalled
-after DCS replaces that file.
-
-## Development
-
-Developers with Python 3.11 or newer can install the project locally:
-
-```powershell
-py -3 -m pip install -e .
-```
-
-Protocol ports are:
-
-| Direction | Address |
-|---|---|
-| Python to DCS | `127.0.0.1:34383` |
-| DCS to Python | `127.0.0.1:34384` |
-
-## Future work
-
-Items 1-11 of the audio and recognition architecture plan are implemented in this revision.
-The following work remains deliberately deferred until field measurements show that the new
-pipeline is stable:
-
-12. Add a light, configurable radio/intercom DSP effect to Alan while preserving
-    intelligibility.
-13. Carry explicit command provenance from Lua instead of relying on the current live
-    `F10`/`Other` application-side alias.
-14. Use the JSONL measurements from real sorties to decide whether GPU recognition and larger
-    models improve command accuracy enough to justify their latency, RAM/VRAM use, and DCS
-    contention.
-15. Package the proven worker/runtime combination into a simpler end-user release after the
-    in-cockpit acceptance pass.
+[INSTALLATION.md](INSTALLATION.md) — installation, updates, unusual DCS locations and troubleshooting.
