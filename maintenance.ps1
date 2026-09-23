@@ -27,6 +27,7 @@ $PiperSha256 = "f3c58906402b24f3a96d92145f58acba6d86c9b5db896d207f78dc80811efcea
 $VoiceRevision = "b15880f5cbc33fcfc97938b1f72411dc770e5bc4"
 $VoiceModelMd5 = "8f6b35eeb8ef6269021c6cb6d2414c9b"
 $VoiceConfigMd5 = "b11d9afd0a8f5372c42a52fbd6e021d4"
+$PowerShellExe = Join-Path $PSHOME $(if ($PSVersionTable.PSEdition -eq "Core") { "pwsh.exe" } else { "powershell.exe" })
 
 function Read-Json([string]$Path) {
     try {
@@ -218,15 +219,15 @@ foreach ($Component in $Status.components) {
     Write-Host "[$($Component.state)] $($Component.name): $($Component.detail)"
     switch ($Component.name) {
         "runtime" {
-            & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root "setup.ps1")
+            & $PowerShellExe -NoLogo -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root "setup.ps1")
         }
         "stt" {
             $Desired = Get-DesiredStt
             $ModelKey = $Desired.model -replace "^ggml-", "" -replace "\.bin$", ""
-            & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root "setup-stt.ps1") -Model $ModelKey -Compute $Desired.compute
+            & $PowerShellExe -NoLogo -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root "setup-stt.ps1") -Model $ModelKey -Compute $Desired.compute
         }
         "tts" {
-            & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root "setup-tts.ps1")
+            & $PowerShellExe -NoLogo -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root "setup-tts.ps1")
         }
     }
     if ($LASTEXITCODE -ne 0) {
