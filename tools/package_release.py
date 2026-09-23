@@ -16,6 +16,7 @@ ROOT_FILES = (
     "configuration.bat",
     "install.bat",
     "maintenance.ps1",
+    "repair.bat",
     "run.bat",
     "setup-stt.bat",
     "setup-stt.ps1",

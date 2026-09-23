@@ -1,180 +1,75 @@
 # DCS Radio Voice Control
 
-DCS Radio Voice Control lets you operate the DCS radio menu by voice.
-
-Hold your HOTAS push-to-talk button, say a command such as:
-
-> “Flight, Cover Me”
-
-and release the button. The command is matched against the radio options actually available in DCS and, when the match is sufficiently clear, is executed.
-
-Speech recognition runs locally on your PC. Recorded speech is not sent to a cloud service.
+DCS Radio Voice Control operates the live DCS radio menu by voice. Hold push-to-talk, say a command such as **“Flight, Cover Me”**, and release. Speech recognition runs locally; recorded speech is not sent to a cloud service.
 
 ## Features
 
-- Control DCS radio commands using your voice.
-- Uses the live DCS radio menu, including mission-specific F10 commands.
-- HOTAS push-to-talk or keyboard push-to-talk.
-- Direct commands for things you already know.
-- Guided voice navigation for commands you don't remember.
-- Spoken command lists as a quick in-cockpit aide-mémoire.
-- Local speech recognition using Whisper.
-- Configurable command aliases, microphone, audio output and HOTAS button.
-- Optional automatic startup with Windows; the application waits for DCS when it is not needed.
+- Direct voice commands against the options currently available in DCS.
+- Guided **Show** navigation and spoken **List** command reminders.
+- Mission-specific F10 commands.
+- HOTAS or keyboard push-to-talk.
+- Local Whisper speech recognition and Piper speech output.
+- Configurable aliases, microphone, audio output and matching thresholds.
+- Optional Desktop shortcut and Start with Windows.
 
-## Quick start
+## Install
 
 Requires Windows 11 x64 and DCS World.
 
-1. Download `DCS-Radio-Voice-Control.zip`.
+1. Close DCS and DCS Radio Voice Control.
+2. Run `DCS-Radio-Voice-Control-Setup.exe`.
+3. Read the DCS integration notice and choose **Install**.
+4. Setup installs DRVC for your Windows account and downloads/verifies its private Python, Whisper and Piper components. Approve Windows elevation only when the protected DCS radio-menu file needs changing.
+5. On the final page, leave **Configure DCS Radio Voice Control** selected. Choose your microphone, audio output and PTT button, then **Save configuration and start**.
 
-2. Open your **Downloads** folder, right-click `DCS-Radio-Voice-Control.zip` and select **Extract All**.
+The program is installed under `%LOCALAPPDATA%\Programs\DCS Radio Voice Control`. User configuration and aliases are kept separately under `%LOCALAPPDATA%\DCSRadioVoiceControl`.
 
-3. Choose your Windows user folder as the destination, for example:
+See [INSTALLATION.md](INSTALLATION.md) for the full procedure and troubleshooting.
 
-   `C:\Users\your-name`
+## Use
 
-   Windows will create:
-
-   `C:\Users\your-name\DCS-Radio-Voice-Control`
-
-4. Open the new `DCS-Radio-Voice-Control` folder.
-
-5. Right-click an empty area inside the folder and select **Open in Terminal**. This opens a PowerShell terminal in the correct folder.
-
-6. Type:
-
-   ```powershell
-   .\install.bat
-   ```
-
-   and press **Enter**. Installation may take several minutes the first time.
-
-7. When installation is complete, the configuration page opens automatically. Select your microphone, audio output and push-to-talk button. **Create a Desktop shortcut** is selected by default; you can also choose whether DCS Radio Voice Control starts with Windows. Then choose **Save configuration and start**.
-
-8. DCS Radio Voice Control will start and wait for DCS. Start DCS and enter a mission.
-
-For more detailed installation instructions, non-standard DCS locations and troubleshooting, see [INSTALLATION.md](INSTALLATION.md). A successful install remembers the DCS and Saved Games locations for later runs.
-
-## Using DCS Radio Voice Control
-
-There are three ways to use it: **Direct**, **List** and **Show**.
-
-### Direct commands
-
-If you know the command, simply say it:
+Direct commands execute a complete live command without navigating the menu first:
 
 > “Flight, Cover Me”
 
 > “Two, Rejoin”
 
-> “Ground Crew, Request Rearming”
-
-The command is resolved against the options currently available in DCS and executed directly. You do not need to open or navigate the radio menu first.
-
-### List — tell me what's available
-
-`List` is an audible aide-mémoire. It tells you the choices without opening or changing the DCS radio menu.
-
-For example:
+`List` speaks the choices without changing the DCS menu:
 
 > “List ATC commands”
 
-responds with the currently available ATC choices.
+`Show` opens a known menu path for guided navigation:
 
-You can also ask for another part of the menu:
+> “Show ATC”
 
-> “List Flight commands”
+> “Show F10”
 
-> “List F10 commands”
+Once a guided menu is visible, say the displayed option or its bare function key. Bare `F1`–`F10` are relative to the visible menu; `Show F1`–`Show F10` start from the root radio menu. `Previous Menu`/`F11` goes back and `Exit Menu`/`F12` closes the menu.
 
-Nothing is selected or executed by a `List` command.
-
-### Show — let me navigate the menu
-
-`Show` opens the DCS radio menu and starts guided navigation.
-
-For example:
-
-> “Show Menu”
-
-The DCS radio menu appears. You can then speak one of the choices shown on screen:
-
-> “Flight”
-
-If that opens another menu, speak the next displayed choice:
-
-> “Formation”
-
-> “Go Line Abreast”
-
-Each phrase selects only an option on the menu currently displayed. Selecting a submenu moves to that submenu; selecting a command executes it and finishes guided navigation.
-
-You can also select displayed choices by saying their function key:
-
-> “F2”
-
-`Previous Menu` or `F11` goes back one level.
-
-`Exit Menu` or `F12` closes the radio menu.
-
-### Command aliases
-
-DCS terminology is not always what a pilot would naturally say. DCS Radio Voice Control therefore supports configurable aliases.
-
-For example:
-
-> “Two, Rejoin”
-
-can resolve to:
-
-> `Wingman > Rejoin Formation`
-
-Aliases can be edited without changing the program. They change the vocabulary used to identify a command; they do not allow an unrelated command to be selected.
+Aliases can make DCS terminology more natural. For example, `Two, Rejoin` can resolve to `Wingman > Rejoin Formation` without bypassing command matching.
 
 ## Configuration
 
-Run:
-
-```powershell
-.\configuration.bat
-```
-
-The configuration page lets you select and test:
-
-- microphone;
-- audio output;
-- HOTAS push-to-talk;
-- speech-recognition model;
-- command-matching settings;
-- audio feedback; and
-- Desktop shortcut; and
-- automatic startup with Windows.
-
-The Desktop shortcut gives you a simple manual way to start DCS Radio Voice Control. You can move or pin the shortcut using the normal Windows controls. If automatic startup is enabled, DCS Radio Voice Control waits quietly until DCS is running and activates voice control when required.
+Open **Start > DCS Radio Voice Control > Configure DCS Radio Voice Control**. Configuration controls the microphone, audio output, HOTAS/PTT, Whisper model, matching thresholds, feedback, Desktop shortcut and Start with Windows.
 
 ## Updating
 
-You normally do not need to uninstall before updating.
+Close DRVC and run the newer Setup EXE. The stable installer identity updates the existing installation in place. Valid unchanged runtime, Whisper and Piper components are reused; configuration, PTT settings and aliases are preserved.
 
-Close DCS and DCS Radio Voice Control, copy the files from the new version over your existing installation, and run `run.bat`.
+## Repair
 
-Your configuration and downloaded speech models are retained.
+Open **Start > DCS Radio Voice Control > Repair DCS Radio Voice Control**. Repair verifies the managed components and DCS integration and replaces only items that can be safely identified. It stops rather than overwriting an unexpected DCS radio-menu file.
 
-See [INSTALLATION.md](INSTALLATION.md) for detailed update instructions.
+## Uninstall
 
-## Uninstalling
+Use **Windows Settings > Apps > Installed apps > DCS Radio Voice Control > Uninstall**. The uninstaller restores the verified original DCS radio-menu file and removes DRVC-owned program files, shortcuts, startup registration and disposable files.
 
-Close DCS and run:
-
-```powershell
-.\uninstall.bat
-```
-
-The uninstaller restores the DCS file backed up during installation and removes the files managed by DCS Radio Voice Control.
-
-See [INSTALLATION.md](INSTALLATION.md) if the uninstaller reports that DCS has changed since installation.
+Configuration and aliases are retained by default. During uninstall you can explicitly choose to delete the remaining user data.
 
 ## More information
 
-[INSTALLATION.md](INSTALLATION.md) — installation, updates, unusual DCS locations and troubleshooting.
+[INSTALLATION.md](INSTALLATION.md) — installation, configuration, updates, repair, removal and troubleshooting.
+
+[PIPER.md](PIPER.md) — local speech output.
+
+[INSTALLER_ARCHITECTURE.md](INSTALLER_ARCHITECTURE.md) — installer ownership and safety contract.

@@ -65,13 +65,13 @@ inspect -> stage -> verify -> replace -> verify
 
 Verified current components are left alone. Downloaded executable components use HTTPS and pinned cryptographic hashes before installation or execution.
 
-Repair reconciles DRVC-owned components with their expected state. It does not attempt to repair Windows or DCS generally.
+Repair is available from the Start menu. It reconciles DRVC-owned components and the verified DCS integration with their expected state. It does not attempt to repair Windows or DCS generally, and an unexpected DCS file is refused rather than overwritten.
 
 A failed download, validation, replacement or cancelled privilege request must not leave a partially installed live component.
 
 ## Shortcuts and startup
 
-The installer/maintenance system owns DRVC's canonical shortcuts and user-level startup registration. Configuration determines whether optional Desktop and startup integration should exist.
+The installer owns the Start-menu shortcuts. Configuration owns the optional canonical Desktop shortcut and user-level startup registration.
 
 No elevation is required for these operations.
 

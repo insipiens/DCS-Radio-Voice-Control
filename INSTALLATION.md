@@ -1,177 +1,55 @@
 # DCS Radio Voice Control installation guide
 
-> **If CombatAI is currently installed:** close DCS and run `uninstall.bat` from the old
-> CombatAI folder before continuing. This renamed version starts with new settings, models,
-> logs, backups and installation records; it deliberately will not install over the old hook.
+This guide describes the current Windows installer, configuration, update, repair and uninstall procedures.
 
-This guide assumes no programming knowledge. It covers installation, configuration, the
-first test in DCS, updates, and safe removal.
+> **CombatAI:** remove an old CombatAI installation with its own uninstaller before installing DCS Radio Voice Control. DRVC deliberately refuses to overwrite the old CombatAI hook.
 
-## What DCS Radio Voice Control installs
+## Requirements
 
-DCS Radio Voice Control adds a small hook to DCS's radio-menu file and keeps the rest of the software in the
-DCS Radio Voice Control folder. It downloads its own private Python runtime, local Whisper speech recognition,
-and the Alan speech voice. It does not require a separate Python installation, does not change
-the Windows `PATH`, and does not send recorded speech to a cloud service.
+- Windows 11 x64.
+- DCS World already installed and launched at least once.
+- Internet access during initial setup.
+- A microphone.
+- Optional HOTAS button for push-to-talk; Space is the keyboard fallback.
 
-## Before you begin
+Close DCS before installing, updating, repairing or uninstalling the DCS integration.
 
-You need:
+## Installation
 
-- Windows 11 on a 64-bit PC;
-- DCS World already installed;
-- an internet connection for the first setup;
-- a microphone;
-- a HOTAS button if you want one for push-to-talk (the Space key also works); and
-- permission to approve a Windows administrator prompt when the DCS hook is installed.
+1. Run `DCS-Radio-Voice-Control-Setup.exe`.
+2. Read the integration notice and choose **Install**.
+3. Setup installs the application for the current Windows user at:
 
-Launch DCS at least once before installing DCS Radio Voice Control. This creates the DCS folder under
-`Saved Games`, which the installer needs. Then close DCS before continuing.
+   `%LOCALAPPDATA%\Programs\DCS Radio Voice Control`
 
-## 1. Download and extract DCS Radio Voice Control
+4. Setup reconciles the private Python/SDL runtime, Whisper and Piper/Alan components. Downloads are staged and verified before replacing a live component. Components already at the pinned version are reused.
+5. DRVC locates DCS and its Saved Games folder. When the protected DCS radio-menu file needs changing, Windows displays a UAC prompt for that operation only.
+6. The original DCS radio-menu file is verified and backed up before DRVC replaces it. If the existing file is unexpected, installation stops rather than forcing a replacement.
+7. On the final Setup page, leave **Configure DCS Radio Voice Control** selected. The configuration page opens in your browser.
 
-1. Download the release asset named `DCS-Radio-Voice-Control.zip`. Do not use GitHub's
-   automatically generated **Source code** or branch ZIPs.
-2. Open your Downloads folder in File Explorer.
-3. Right-click the ZIP and select **Extract All**.
-4. Choose your Windows user folder as the destination; for example,
-   `C:\Users\your-name`.
-5. Windows will create `C:\Users\your-name\DCS-Radio-Voice-Control`.
-6. Open the new `DCS-Radio-Voice-Control` folder and check that it contains `install.bat`,
-   `configuration.bat`, and `run.bat`.
+The normal installer recognises the standard standalone and default Steam DCS locations. A previously recorded DCS/Saved Games location is also reused. The current installer has no path-selection page for a new non-standard DCS location; the command-line installation tool remains available for development use until that UI is added.
 
-Do not run DCS Radio Voice Control from inside the ZIP preview. Do not put it in `Program Files`. Keep the
-extracted folder after installation: it contains the program and is also needed for safe
-updates and removal.
+## Configuration
 
-If Windows shows an **Unblock** checkbox in the ZIP's **Properties** window, select it before
-extracting. This can prevent Windows from marking every extracted script as downloaded from
-the internet.
+The first configuration run offers **Save configuration and start**.
 
-## 2. Open PowerShell in the DCS Radio Voice Control folder
+1. Select the microphone and run the three-second level test.
+2. Select the playback device and test Alan/cues if required.
+3. Choose **Learn a HOTAS button**, or **Use Space only**.
+4. Leave `base.en`, CPU recognition and the default matching thresholds for the first test.
+5. **Create a Desktop shortcut** is selected on first setup; clear it if unwanted.
+6. Optionally enable **Start DCS Radio Voice Control with Windows**.
+7. Choose **Save configuration and start**.
 
-The easiest method is:
+Later, open **Start > DCS Radio Voice Control > Configure DCS Radio Voice Control**. The normal button is then **Save configuration**.
 
-1. Open the extracted DCS Radio Voice Control folder in File Explorer.
-2. Right-click an empty area inside the folder and select **Open in Terminal**.
+Configuration is stored at `%LOCALAPPDATA%\DCSRadioVoiceControl\config.json`. Aliases are stored beside it in `aliases.json`. They are not program files and are preserved by updates and repair.
 
-A PowerShell terminal will open in that folder. Its prompt should end with the name of your
-DCS Radio Voice Control folder, for example:
+## First DCS test
 
-```text
-PS C:\Users\your-name\DCS-Radio-Voice-Control>
-```
+Start DCS and enter a mission. DRVC waits for the live DCS command catalogue before enabling voice control.
 
-Leave this window open for the following commands. You can paste a command into PowerShell
-and press Enter to run it.
-
-## 3. Install DCS Radio Voice Control
-
-Make sure DCS is closed, then run:
-
-```powershell
-.\install.bat
-```
-
-The first run downloads and verifies the private runtime, SDL controller support, Whisper's
-`base.en` model, and the Alan voice. The speech model alone is about 142 MiB, so this stage can
-take several minutes. Later runs reuse files that are already valid.
-
-Windows will ask whether the installer may make changes to the computer. Approve this prompt.
-Administrator access is used to update the DCS program file; the other DCS Radio Voice Control files remain
-in the extracted folder or your own user folders.
-
-When installation succeeds, PowerShell prints JSON containing an `outcome`. On a first install
-this describes the installed DCS panel. The configuration page then opens automatically. When applying a
-later DCS Radio Voice Control patch it may instead say `updated_active_dcs_panel` or `already_current`.
-
-### If DCS is in the usual location
-
-No path is normally needed. DCS Radio Voice Control checks these locations:
-
-- `C:\Program Files\Eagle Dynamics\DCS World`
-- `C:\Program Files\Eagle Dynamics\DCS World OpenBeta`
-- `C:\Program Files (x86)\Steam\steamapps\common\DCSWorld`
-
-### If DCS is elsewhere, including another Steam library
-
-Run the installer with the actual DCS folder. The correct folder is the one containing DCS's
-`bin` and `Scripts` folders.
-
-For a Steam installation, open Steam's **Library**, right-click **DCS World Steam Edition**,
-select **Manage > Browse local files**, and copy the folder path from File Explorer's address
-bar. For a standalone installation, right-click the DCS shortcut, select **Properties**, and
-use the installation folder shown in the **Target** field rather than the path to the `.exe`
-itself.
-
-For example:
-
-```powershell
-.\install.bat `
-  --dcs-install "D:\SteamLibrary\steamapps\common\DCSWorld" `
-  --saved-games "$env:USERPROFILE\Saved Games\DCS"
-```
-
-The backtick at the end of the first two lines tells PowerShell that the command continues on
-the next line. You may instead put the whole command on one line:
-
-```powershell
-.\install.bat --dcs-install "D:\SteamLibrary\steamapps\common\DCSWorld" --saved-games "$env:USERPROFILE\Saved Games\DCS"
-```
-
-Use `DCS.openbeta` instead of `DCS` in the Saved Games path if that is the folder DCS created.
-Providing both paths is also the solution if DCS Radio Voice Control reports that it found more than one DCS
-installation or more than one Saved Games DCS folder. After a successful install, these locations are remembered
-in `%LOCALAPPDATA%\DCSRadioVoiceControl\installation.json`.
-
-## 4. Configure your microphone, sound, and push-to-talk
-
-On a first installation, `install.bat` opens the local configuration page automatically. If you
-want to change the settings later, run:
-
-```powershell
-.\configuration.bat
-```
-
-If the browser does not open, browse to `http://127.0.0.1:34385/` while the configuration
-window is running.
-
-On the page:
-
-1. Select your recording device and click **Run three-second level test**. Speak at your normal
-   cockpit volume and confirm that the test reports a signal rather than silence.
-2. Select the playback device on which you want to hear Alan and the accepted/rejected cues.
-   Use **Test Alan voice** and the two cue-test buttons.
-3. Under **Push to talk**, click **Learn a HOTAS button**, then press and release the button you
-   want. If you do not want to use a controller, click **Use Space only**.
-4. Leave the default `base.en`, CPU, and command-matching settings selected for the first test.
-5. **Create a Desktop shortcut** is selected by default on the first installation. Leave it selected if
-   you want an obvious manual way to start DCS Radio Voice Control later. You can move or pin that shortcut
-   using the normal Windows controls.
-6. Optional: select **Start DCS Radio Voice Control with Windows**. This installs a per-user sign-in entry;
-   it does not require administrator permission.
-7. On the first installation, click **Save configuration and start**. Your settings are saved,
-   the configuration program closes cleanly, and DCS Radio Voice Control starts automatically.
-
-When you open `configuration.bat` later, the button is **Save configuration** and does not
-start another controller. Configuration is stored at
-`%LOCALAPPDATA%\DCSRadioVoiceControl\config.json` and is retained during updates.
-
-## 5. Run DCS Radio Voice Control in DCS
-
-1. After **Save configuration and start**, leave the Terminal window open. DCS Radio Voice Control
-   is now running and waiting for DCS.
-2. Start DCS and enter a mission in which the radio menu is available. DCS Radio Voice Control will wait for a
-   live DCS command catalogue.
-3. Hold your configured HOTAS button, or Space, speak a command, and then release the button.
-
-For later manual starts, use the **DCS Radio Voice Control** Desktop shortcut if you created it. You can
-still run `.\run.bat` from the DCS Radio Voice Control folder. `run.bat`
-checks whether the installed DCS hook matches this version and asks for administrator permission
-only if the hook must be installed or updated.
-
-For the first flight, start with commands that are easy to observe and do not trigger an
-aircraft action:
+Useful non-destructive first commands are:
 
 ```text
 List commands
@@ -179,214 +57,84 @@ List ATC commands
 Show F10
 ```
 
-`List` makes Alan speak the immediate choices without changing the on-screen DCS menu. `Show`
-starts guided menu mode. DCS Radio Voice Control keeps the DCS menu visible and accepts only choices shown on
-that menu. A submenu choice advances one level; a displayed command executes and ends guided
-mode. This is intended for commands you do not remember well.
+A direct command such as `Flight, Cover Me` is resolved against the complete live executable catalogue. A successful direct command also ends any guided menu session.
 
-While a guided menu is visible, you may say either the displayed option name or its bare
-function key from `F1` through `F10`. For example, saying `F5` at the main radio menu selects
-the item currently displayed beside F5. Function keys are always interpreted relative to the
-visible menu; they are never fuzzy-matched or replayed as an absolute path. `Show F5` does not
-execute a command: say `F5` by itself to select the displayed item.
+`List` speaks the immediate choices without changing the DCS menu.
 
-For example:
+`Show` starts guided navigation at a named/root menu. `Show ATC`, `Show Flight` and `Show F1`–`Show F10` are absolute requests from the root radio menu. Once a guided menu is visible, bare `F1`–`F10` and spoken option names select from that visible menu. `Previous Menu`/`F11` goes back; `Exit Menu`/`F12` closes it.
 
-```text
-Show ATC
-```
+Recipient aliases such as `Two` → `Wingman` restrict matching to the corresponding live subtree; they do not contribute matching confidence by themselves. Action aliases can then resolve inside that subtree, for example `Two, Rejoin`.
 
-Opens the DCS **F5 ATC** menu.
+## Everyday start
 
-```text
-Show Biggin Hill
-```
+Use either:
 
-Opens the **Biggin Hill** submenu within ATC.
+- **Start > DCS Radio Voice Control > DCS Radio Voice Control**;
+- the optional Desktop shortcut; or
+- **Start with Windows**, if enabled in Configuration.
 
-```text
-Request Start-Up
-```
+With Start with Windows enabled, the lightweight controller waits for DCS. Whisper, Piper, microphone capture and optional GPU support are loaded only when a mission and current DCS hook are ready.
 
-Executes the displayed command.
+## Updating
 
-For a familiar command, omit `Show` and give the complete command directly:
+Do not uninstall first.
 
-```text
-Flight, Cover Me
-```
+1. Close DCS and DRVC.
+2. Run the newer `DCS-Radio-Voice-Control-Setup.exe`.
+3. Setup uses the same AppId and installation directory, replacing the application files in place.
+4. Component reconciliation leaves valid unchanged Python/SDL, Whisper and Piper components alone.
+5. The DCS hook is updated only if its existing installation can be verified; UAC is requested only if the protected DCS file actually needs changing.
+6. Existing configuration, HOTAS/PTT settings and aliases are retained.
 
-DCS Radio Voice Control attempts that command once without putting you into guided navigation. A
-new push-to-talk press is a new explicit pilot demand, so the same command can be deliberately
-issued again on the next press without first saying something different.
+If the DCS radio-menu file changed outside DRVC after installation, the update is refused rather than restoring or overwriting an old file.
 
-To move back up or close the displayed menu:
+## Repair
 
-```text
-Previous Menu
-```
+Open **Start > DCS Radio Voice Control > Repair DCS Radio Voice Control**.
 
-Selects DCS's displayed **F11 Previous Menu** control.
+Repair checks the private runtime, Whisper, Piper/Alan and the DCS integration. Missing, outdated or invalid DRVC-owned components are staged, verified and replaced. The DCS integration is repaired/updated only when the existing state proves it is safe to do so.
 
-```text
-Exit Menu
-```
+If Repair reports that the DCS panel or installation record is unexpected, stop and keep the error. There is no **Force** or **Replace anyway** path.
 
-Selects DCS's **F12 Exit** behaviour and closes the radio menu. You may also say `F11`, `Back`,
-`F12`, or `Close Menu` respectively.
+Repair preserves configuration, PTT settings and aliases.
 
-`Repeat` only says Alan's last spoken response again, principally after a `List` request. It
-never sends or repeats a DCS action. If Alan has not spoken, DCS Radio Voice Control reports `Nothing spoken
-to repeat.`
+## Uninstall
 
-Action aliases are stored in:
+1. Close DCS and DRVC.
+2. Open **Windows Settings > Apps > Installed apps**.
+3. Find **DCS Radio Voice Control** and choose **Uninstall**.
+4. Approve UAC if Windows requires it to restore the protected DCS file.
+5. DRVC verifies the installed panel and its backup before restoring the original. If either has changed unexpectedly, uninstall stops without overwriting DCS.
+6. Choose whether to keep configuration and aliases for a future reinstall. Keeping them is the default/recommended path; deleting them is an explicit choice.
 
-```text
-%LOCALAPPDATA%\DCSRadioVoiceControl\aliases.json
-```
-
-On first use the file is created with the standard recipient and formation shorthand, including
-`2`/`two`/`number two` → `Wingman`, `3`/`three`/`element` → `Second Element`, and the action
-aliases `join up`/`rejoin`, `abreast`/`line abreast`, and `trail`/`echelon trail`. Existing user
-aliases are never overwritten by an update.
-
-Recipient aliases only select the corresponding live DCS subtree; they contribute no matching
-score. The remaining command must still resolve safely inside that subtree. Action aliases can
-be composed with them, so `Two, Rejoin` resolves `Rejoin Formation` only within `Wingman`.
-
-Rejected phrases that resemble a command may be added to the same file with a `null` value for
-later review. A `null` value has no effect until you replace it with an exact target. Application-
-side phrases such as an unrecognised `List` request remain separate in `pending_meta_aliases.json`.
-
-Reviewed mappings are loaded automatically. Their targets must exactly identify one current
-DCS command; an invalid or ambiguous mapping is rejected rather than fuzzily reinterpreted.
-
-DCS Radio Voice Control sends a command only when the recognition result passes both configured safety gates.
-An accepted response confirms that DCS ran the menu action; a mission script can still decide
-what gameplay effect follows.
-
-To stop DCS Radio Voice Control, return to its PowerShell window and press Ctrl+C.
-
-## Everyday use
-
-If **Start DCS Radio Voice Control with Windows** is disabled, use this manual sequence for each session:
-
-1. Double-click the **DCS Radio Voice Control** Desktop shortcut, or run `.\run.bat` from the DCS Radio Voice Control folder.
-2. Start DCS and enter the mission.
-3. Leave the DCS Radio Voice Control window open while flying.
-4. Press Ctrl+C in that window when finished.
-
-Only one DCS Radio Voice Control test or runner can listen to DCS at a time. Close any earlier DCS Radio Voice Control
-PowerShell window before starting another one.
-
-If **Start DCS Radio Voice Control with Windows** is enabled, no daily command is needed. The lightweight
-controller starts when you sign in and waits for DCS. Whisper, Piper, the microphone, SDL, and
-optional CUDA support remain unloaded until DCS has entered a mission and the current hook is
-responding. DCS Radio Voice Control then becomes **Ready** and stops the voice worker automatically when DCS
-exits. Disable the switch on the configuration page to stop automatic operation.
-
-## Applying a DCS Radio Voice Control update or patch
-
-You normally do **not** need to uninstall DCS Radio Voice Control first.
-
-1. Close DCS and DCS Radio Voice Control.
-2. Extract the new ZIP to a temporary folder, then open the
-   `DCS-Radio-Voice-Control` folder it creates. You should see `install.bat` inside.
-3. Select everything inside that folder, copy it, and paste it into your existing DCS Radio Voice Control folder.
-   Choose **Replace the files in the destination** when Windows asks. Do not delete the old
-   folder first; this preserves the downloaded runtime and models.
-4. Open PowerShell in the existing DCS Radio Voice Control folder and run `.\run.bat`. DCS Radio Voice Control checks and,
-   when safe, updates the hook automatically. It prompts for administrator permission only when
-   a change is required.
-5. If DCS was open, restart DCS when DCS Radio Voice Control asks. A hook already loaded into a running DCS
-   process cannot be replaced in memory.
-6. For an advanced manual check, run the status command from step 4 of this guide and confirm
-   that `healthy` is `true`.
-
-The installer checks hashes before changing anything. If DCS, VAICOM, another mod, or a DCS
-update changed the radio-panel file after DCS Radio Voice Control was installed, the update is deliberately
-refused. In that case, do not force-copy the hook and do not uninstall immediately: an old
-backup may no longer be the correct file for the updated DCS version. Keep the error and status
-output and resolve the changed base file before continuing.
-
-## Advanced installation check
-
-If you need to verify the installed DCS hook manually, run:
-
-```powershell
-.\runtime\python.exe .\tools\install.py status
-```
-
-A healthy installation reports `"healthy": true`. The successful installation's DCS and Saved Games
-locations are reused automatically.
-
-## Optional speech models
-
-The default `base.en` model is the right starting point. Larger models require more disk space,
-memory, and recognition time. To install one for comparison:
-
-```powershell
-.\setup-stt.bat small.en
-.\setup-stt.bat medium.en
-```
-
-`small.en` is about 466 MiB and `medium.en` about 1.5 GiB. After installation, select the model
-on the configuration page and save the change.
-
-An experimental NVIDIA CUDA 12 worker can be installed with:
-
-```powershell
-.\setup-stt.bat base.en cuda12
-```
-
-CPU mode remains the recommended baseline until testing on your PC shows that GPU recognition
-improves the overall result without interfering with DCS.
+A successful uninstall removes the application, private runtime, speech components, Start-menu entries, canonical Desktop shortcut, Start with Windows registration, logs and DRVC Saved Games integration state.
 
 ## Troubleshooting
 
-| What you see | What to do |
+| What you see | Action |
 |---|---|
-| `install.bat` is not found | PowerShell is not in the extracted DCS Radio Voice Control folder. Repeat step 2 and check the prompt. |
-| DCS Radio Voice Control cannot locate DCS | Use `--dcs-install` and `--saved-games` as shown in step 3. This is expected for a Steam library on another drive. |
-| More than one DCS or Saved Games folder was found | Supply both explicit paths so the installer cannot choose the wrong one. |
-| A download fails | Check the internet connection, VPN/proxy, and antivirus history, then run the same batch file again. Setup safely reuses downloads that already passed verification. |
-| The browser configuration page does not open | Leave the configuration window running and browse to `http://127.0.0.1:34385/`. If the port is already in use, close the older configuration window first. |
-| The microphone test reports silence | Select a different recording device and check Windows **Settings > System > Sound > Input** and microphone privacy permissions. |
-| The HOTAS is not listed | Connect and power it before opening the configuration page, then restart `configuration.bat`. Use **Space only** as a fallback. |
-| DCS Radio Voice Control waits for DCS indefinitely | Enter an active mission, confirm the installation status is healthy, and make sure only one DCS Radio Voice Control runner is open. |
-| DCS Radio Voice Control says `Restart DCS` | The file on disk is current but the running DCS process loaded an older hook. Close DCS completely and start it again. |
-| DCS Radio Voice Control says `Repair required` | Run `install.bat` in PowerShell and preserve its complete output. DCS Radio Voice Control detected a missing, altered, or ambiguous installation that it will not overwrite automatically. |
-| DCS has no DCS Radio Voice Control catalogue | Check `Saved Games\DCS\Logs\dcs.log`. Advanced checks: DCS should own UDP port `34383`, and DCS Radio Voice Control should own `34384`. |
-| `Previous Menu` or `Exit Menu` is rejected as an ordinary command | Rerun `install.bat`; these controls require both the current Windows application and the current DCS hook. |
-| The installer refuses because the panel changed | Stop. Do not overwrite it manually. Preserve the full error/status output; the safety check is protecting a DCS update or another modification. |
+| Setup cannot locate DCS | The current Setup UI auto-detects standard locations only. Do not point it at a guessed folder; record the error for investigation. |
+| Download/component setup fails | Check the connection and antivirus history, then run Setup again or use **Repair** if the application is installed. Verified existing components are reused. |
+| Configuration page does not open | Leave its window running and open `http://127.0.0.1:34385/` locally. |
+| Microphone test is silent | Check the selected input and Windows microphone permissions. |
+| HOTAS is absent | Connect/power it before opening Configuration, then reopen Configuration. Space remains available. |
+| DRVC waits for DCS | Enter an active mission and ensure only one DRVC controller/test process is running. |
+| DRVC reports **Restart DCS** | Close DCS completely and start it again so the current hook is loaded. |
+| Repair/install says the DCS panel changed | Stop. Do not manually overwrite the panel or restore an old backup. |
+| Uninstall refuses to restore DCS | Leave the DCS file alone. The safety check has detected an unverified change. |
 
-Text and JSONL diagnostic logs are stored under `%LOCALAPPDATA%\DCSRadioVoiceControl\logs`. Recorded audio
-is not retained.
+Diagnostic logs are stored under `%LOCALAPPDATA%\DCSRadioVoiceControl\logs`. Recorded speech is not retained.
 
-## Uninstalling
-
-Close DCS and DCS Radio Voice Control, open PowerShell in the DCS Radio Voice Control folder, and run:
-
-```powershell
-.\uninstall.bat
-```
-
-Approve the administrator prompt. A successful uninstall restores the exact DCS file that was
-backed up during installation and removes DCS Radio Voice Control's Saved Games state, local configuration,
-logs, private runtime, speech models, and Alan voice. The extracted source folder is retained;
-after the uninstaller reports success, you may delete that folder yourself.
-
-Removal is refused if the installed DCS panel changed after installation or if the backup
-cannot be verified. This is intentional: it prevents an older backup from overwriting a DCS
-update or another modification. Do not manually replace the panel when this happens.
-
-## Files DCS Radio Voice Control uses
+## Managed locations
 
 | Purpose | Location |
 |---|---|
-| Program, private runtime, Whisper, and Alan | The extracted DCS Radio Voice Control folder |
-| Settings | `%LOCALAPPDATA%\DCSRadioVoiceControl\config.json` |
-| Installed DCS locations | `%LOCALAPPDATA%\DCSRadioVoiceControl\installation.json` |
-| Logs | `%LOCALAPPDATA%\DCSRadioVoiceControl\logs` |
-| Installation record and backups | `Saved Games\DCS\Scripts\DCSRadioVoiceControl` |
-| DCS hook target | The active DCS installation's `Scripts\UI\RadioCommandDialogPanel\RadioCommandDialogsPanel.lua` |
+| Application and private components | `%LOCALAPPDATA%\Programs\DCS Radio Voice Control` |
+| Configuration and aliases | `%LOCALAPPDATA%\DCSRadioVoiceControl` |
+| Remembered DCS/Saved Games paths | `%LOCALAPPDATA%\DCSRadioVoiceControl\installation.json` |
+| DCS integration record/backups | `Saved Games\DCS\Scripts\DCSRadioVoiceControl` |
+| DCS integration target | `<DCS>\Scripts\UI\RadioCommandDialogPanel\RadioCommandDialogsPanel.lua` |
+
+## Developer/batch workflow
+
+The repository still contains `install.bat`, `run.bat`, `configuration.bat`, `uninstall.bat` and component setup scripts for development and diagnostics. They are not the normal installed-user procedure. The public installer should be used for installation, update, configuration, repair and uninstall testing.

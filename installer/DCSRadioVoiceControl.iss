@@ -38,6 +38,7 @@ Source: "..\PIPER.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\configuration.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\install.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\maintenance.ps1"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\repair.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\run.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\setup.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\setup.ps1"; DestDir: "{app}"; Flags: ignoreversion
@@ -55,9 +56,10 @@ Source: "..\tools\purge-local.ps1"; DestDir: "{app}\tools"; Flags: ignoreversion
 [Icons]
 Name: "{group}\DCS Radio Voice Control"; Filename: "{app}\run.bat"; WorkingDir: "{app}"
 Name: "{group}\Configure DCS Radio Voice Control"; Filename: "{app}\configuration.bat"; WorkingDir: "{app}"
+Name: "{group}\Repair DCS Radio Voice Control"; Filename: "{app}\repair.bat"; WorkingDir: "{app}"
 
 [Run]
-Filename: "{app}\configuration.bat"; Description: "Configure DCS Radio Voice Control"; WorkingDir: "{app}"; Flags: postinstall skipifsilent
+Filename: "{app}\configuration.bat"; Parameters: "--start-after-save"; Description: "Configure DCS Radio Voice Control"; WorkingDir: "{app}"; Flags: postinstall skipifsilent
 Filename: "{app}\run.bat"; Description: "Start DCS Radio Voice Control"; WorkingDir: "{app}"; Flags: postinstall skipifsilent nowait
 
 [UninstallDelete]
@@ -70,6 +72,9 @@ Type: files; Name: "{localappdata}\DCSRadioVoiceControl\installation.json"
 Type: dirifempty; Name: "{localappdata}\DCSRadioVoiceControl"
 
 [Code]
+var
+  RemoveUserData: Boolean;
+
 procedure RunRequired(const Filename, Params, Description: String);
 var
   ResultCode: Integer;
@@ -127,5 +132,16 @@ begin
   RegDeleteValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Run',
     'DCS Radio Voice Control');
   DeleteFile(ExpandConstant('{userdesktop}\DCS Radio Voice Control.lnk'));
+
+  RemoveUserData :=
+    MsgBox('Keep your DCS Radio Voice Control configuration and aliases for a future reinstall?'#13#10#13#10 +
+      'Choose Yes to keep them, or No to delete all remaining DCS Radio Voice Control user data.',
+      mbConfirmation, MB_YESNO) = IDNO;
   Result := True;
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if (CurUninstallStep = usPostUninstall) and RemoveUserData then
+    DelTree(ExpandConstant('{localappdata}\DCSRadioVoiceControl'), True, True, True);
 end;
