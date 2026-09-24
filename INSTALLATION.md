@@ -27,7 +27,7 @@ Close DCS before installing, updating, repairing or uninstalling the DCS integra
 4. Setup reconciles the private Python/SDL runtime, Whisper and Piper/Alan components. Downloads are staged and verified before replacing a live component. Components already at the pinned version are reused.
 5. DRVC locates DCS and its Saved Games folder. When the protected DCS radio-menu file needs changing, Windows displays a UAC prompt for that operation only.
 6. The original DCS radio-menu file is verified and backed up before DRVC replaces it. If the existing file is unexpected, installation stops rather than forcing a replacement.
-7. On the final Setup page, leave **Configure DCS Radio Voice Control** selected. The configuration page opens in your browser.
+7. On the final Setup page, leave **Configure DCS Radio Voice Control** selected. The configuration page opens in your browser. After **Save configuration and close**, Setup starts the separate notification-area controller; you may close the browser tab.
 
 The normal installer recognises the standard standalone and default Steam DCS locations. A previously recorded DCS/Saved Games location is also reused. The current installer has no path-selection page for a new non-standard DCS location; the command-line installation tool remains available for development use until that UI is added.
 
@@ -71,17 +71,19 @@ Recipient aliases such as `Two` → `Wingman` restrict matching to the correspon
 
 Use either:
 
-- **Start > DCS Radio Voice Control > DCS Radio Voice Control**;
+- **Start > DCS Radio Voice Control > Start DCS Radio Voice Control**;
 - the optional Desktop shortcut; or
 - **Start when DCS starts**, if enabled in Configuration.
 
-With Start when DCS starts enabled, the lightweight controller waits for DCS. Whisper, Piper, microphone capture and optional GPU support are loaded only when a mission and current DCS hook are ready.
+With Start when DCS starts enabled, Windows starts a visible notification-area controller at sign-in. It waits for DCS; Whisper, Piper, microphone capture and optional GPU support are loaded only when a mission and current DCS hook are ready.
+
+Left-click the notification-area icon for status. Right-click it for **Open runtime log**, **Configure**, **Repair**, **Download update**, and **Exit**.
 
 ## Updating
 
 Do not uninstall first.
 
-1. Close DCS and DRVC.
+1. Exit the notification-area controller, then close DCS.
 2. [Download the current development installer](https://github.com/insipiens/DCS-Radio-Voice-Control/releases/download/development-installer/DCS-Radio-Voice-Control-Setup.exe) and run it.
 3. Setup uses the same AppId and installation directory, replacing the application files in place.
 4. Component reconciliation leaves valid unchanged Python/SDL, Whisper and Piper components alone.
@@ -92,7 +94,7 @@ If the DCS radio-menu file changed outside DRVC after installation, the update i
 
 ## Repair
 
-Open **Start > DCS Radio Voice Control > Repair DCS Radio Voice Control**.
+Close DCS, then choose **Repair** from the notification-area menu or open **Start > DCS Radio Voice Control > Repair DCS Radio Voice Control**.
 
 Repair checks the private runtime, Whisper, Piper/Alan and the DCS integration. Missing, outdated or invalid DRVC-owned components are staged, verified and replaced. The DCS integration is repaired/updated only when the existing state proves it is safe to do so.
 
