@@ -1,0 +1,12 @@
+DCS Radio Voice Control installs for your Windows user account.
+
+It does not install Windows services, drivers, system DLLs, scheduled tasks, or change the system PATH.
+
+DRVC must integrate with one protected DCS radio-menu file:
+Scripts\UI\RadioCommandDialogPanel\RadioCommandDialogsPanel.lua
+
+Before changing it, DRVC verifies the file, keeps a verified original, stages the replacement, and checks the result. Administrator approval is requested only when that protected DCS file actually needs changing.
+
+If the DCS file or DRVC installation record is unexpected, the operation stops rather than forcing a replacement.
+
+Choose Install only if you want this DCS integration.

@@ -40,7 +40,7 @@ class BootstrapTests(unittest.TestCase):
             "uninstall.bat",
         ):
             content = (ROOT / filename).read_text(encoding="utf-8")
-            self.assertIn("runtime\\python.exe", content, filename)
+            self.assertTrue("runtime\\python.exe" in content or "runtime\\pythonw.exe" in content, filename)
             self.assertNotIn("py -", content.lower(), filename)
 
     def test_first_install_chains_configuration_into_voice_control(self) -> None:
@@ -48,7 +48,7 @@ class BootstrapTests(unittest.TestCase):
         self.assertIn("configuration_store import setup_complete", installer)
         self.assertIn("DRVC_FIRST_RUN", installer)
         self.assertNotIn('if exist "%DRVC_CONFIG%"', installer)
-        self.assertIn("configuration.bat\" --start-after-save", installer)
+        self.assertIn("configuration.bat\" --close-after-save", installer)
         self.assertIn('if "%DRVC_CONFIG_EXIT%"=="10" goto start_voice_control', installer)
         self.assertIn('call "%~dp0run.bat"', installer)
 
@@ -56,7 +56,8 @@ class BootstrapTests(unittest.TestCase):
         runner = (ROOT / "run.bat").read_text(encoding="utf-8")
         diagnostic = (ROOT / "radio-menu-test.bat").read_text(encoding="utf-8")
         self.assertIn("-m dcs_radio_voice_control.launcher", runner)
-        self.assertIn("start \"\" /b /wait", runner.casefold())
+        self.assertIn("runtime\\pythonw.exe", runner.casefold())
+        self.assertIn("--tray", runner)
         self.assertIn("-m dcs_radio_voice_control", diagnostic)
         self.assertNotIn("voice_command_test", diagnostic)
 

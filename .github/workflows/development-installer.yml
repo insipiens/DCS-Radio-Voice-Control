@@ -1,0 +1,87 @@
+name: Development installer
+
+on:
+  push:
+    branches: [development]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: development-installer
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate PowerShell scripts
+        shell: pwsh
+        run: |
+          $parseErrors = @()
+          Get-ChildItem -Recurse -Filter '*.ps1' | ForEach-Object {
+            $tokens = $null
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref] $tokens, [ref] $errors)
+            $parseErrors += $errors
+          }
+          if ($parseErrors.Count -gt 0) {
+            $parseErrors | Format-Table -AutoSize | Out-String | Write-Error
+            exit 1
+          }
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --yes --no-progress
+      - name: Compile installer
+        shell: pwsh
+        run: |
+          $compiler = @(
+            "${env:ProgramFiles(x86)}\Inno Setup 7\ISCC.exe",
+            "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $compiler) { throw 'Inno Setup compiler not found' }
+          & $compiler installer\DCSRadioVoiceControl.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path dist\DCS-Radio-Voice-Control-Setup.exe)) { throw 'Installer output not found' }
+      - name: Smoke-test fresh install and update
+        shell: pwsh
+        run: |
+          $dcs = Join-Path $env:RUNNER_TEMP 'DCSRadioVoiceControl-smoke-dcs'
+          $savedGames = Join-Path $env:USERPROFILE 'Saved Games\DCS'
+          $panel = Join-Path $dcs 'Scripts\UI\RadioCommandDialogPanel\RadioCommandDialogsPanel.lua'
+          New-Item -ItemType Directory -Force -Path (Split-Path $panel), $savedGames | Out-Null
+          Set-Content -LiteralPath $panel -Value '-- DCS Radio Voice Control installer smoke-test panel' -Encoding utf8
+          $env:DCS_INSTALL_DIR = $dcs
+          $setup = Resolve-Path 'dist\DCS-Radio-Voice-Control-Setup.exe'
+          foreach ($attempt in 1..2) {
+            $process = Start-Process -FilePath $setup -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-' -Wait -PassThru
+            if ($process.ExitCode -ne 0) { throw "Installer attempt $attempt failed with exit code $($process.ExitCode)." }
+          }
+          $app = Join-Path $env:LOCALAPPDATA 'Programs\DCS Radio Voice Control'
+          & pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File (Join-Path $app 'maintenance.ps1') -Action reconcile
+          if ($LASTEXITCODE -ne 0) { throw "Installed component reconciliation failed with exit code $LASTEXITCODE." }
+          & (Join-Path $app 'runtime\python.exe') -c 'import dcs_radio_voice_control.tray'
+          if ($LASTEXITCODE -ne 0) { throw 'Installed notification-area controller could not be imported.' }
+          & (Join-Path $app 'runtime\python.exe') (Join-Path $app 'tools\install.py') install --dcs-install $dcs --saved-games $savedGames
+          if ($LASTEXITCODE -ne 0) { throw 'Installed DCS integration command failed.' }
+          $status = & (Join-Path $app 'runtime\python.exe') (Join-Path $app 'tools\install.py') status --dcs-install $dcs --saved-games $savedGames | ConvertFrom-Json
+          if (-not $status.healthy) { throw 'DCS integration is not healthy after the installer smoke test.' }
+          $componentStatus = & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File (Join-Path $app 'maintenance.ps1') -Action status | ConvertFrom-Json
+          if (-not $componentStatus.ready) { throw 'Installed components did not reach a ready state.' }
+      - name: Publish development installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $asset = 'dist/DCS-Radio-Voice-Control-Setup.exe'
+          $body = "Development installer built from commit $env:GITHUB_SHA. This is a development build."
+          gh release view development-installer | Out-Null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create development-installer $asset --target development --title 'Development installer' --notes $body --prerelease --latest=false
+          } else {
+            gh release upload development-installer $asset --clobber
+            gh release edit development-installer --notes $body --prerelease --latest=false
+          }
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

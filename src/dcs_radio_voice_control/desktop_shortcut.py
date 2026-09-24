@@ -49,7 +49,7 @@ def set_enabled(enabled: bool, root: Path = PROJECT_ROOT) -> dict[str, Any]:
         path.unlink(missing_ok=True)
         return shortcut_status(root)
 
-    target = (root / "run.bat").resolve()
+    target = (root / "runtime" / "pythonw.exe").resolve()
     if not target.is_file():
         raise OSError(f"DCS Radio Voice Control launcher was not found: {target}")
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -61,6 +61,7 @@ def set_enabled(enabled: bool, root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "$shell=New-Object -ComObject WScript.Shell;"
         f"$shortcut=$shell.CreateShortcut({ps(str(path))});"
         f"$shortcut.TargetPath={ps(str(target))};"
+        f"$shortcut.Arguments={ps("-m dcs_radio_voice_control.launcher --tray")};"
         f"$shortcut.WorkingDirectory={ps(str(root.resolve()))};"
         "$shortcut.Description='Start DCS Radio Voice Control';"
         "$shortcut.Save()"

@@ -16,6 +16,7 @@ from typing import Callable, Iterator, Sequence
 
 from .configuration_store import load_document
 from .controller_state import get_state, set_state
+from .installation_state import load_installation_state, save_installation_state
 from .event_log import write_event
 from .stt import PROJECT_ROOT
 
@@ -37,6 +38,20 @@ def _installer_api():
 
 def resolve_installation() -> tuple[Path, Path]:
     install = _installer_api()
+    try:
+        state = load_installation_state()
+    except OSError:
+        state = {}
+    try:
+        dcs = Path(state["dcs_install"]).resolve()
+        saved = Path(state["saved_games"]).resolve()
+    except (KeyError, TypeError, ValueError):
+        pass
+    else:
+        manifest = saved / install.STATE_DIRECTORY / install.MANIFEST_NAME
+        if (dcs / install.RELATIVE_PANEL).is_file() and manifest.is_file():
+            return dcs, saved
+
     saved_candidates = [
         Path.home() / "Saved Games" / name for name in ("DCS", "DCS.openbeta")
     ]
@@ -51,9 +66,13 @@ def resolve_installation() -> tuple[Path, Path]:
         if (dcs / install.RELATIVE_PANEL).is_file():
             recorded.append((dcs.resolve(), saved.resolve()))
     if len(recorded) == 1:
-        return recorded[0]
+        dcs, saved = recorded[0]
+        save_installation_state(PROJECT_ROOT, dcs, saved)
+        return dcs, saved
+
     saved = install.discover_saved_games(None)
-    return install.discover_dcs_install(None), saved
+    dcs = install.discover_dcs_install(None)
+    return dcs, saved
 
 
 def preflight(dcs_install: Path, saved_games: Path) -> dict[str, object]:
@@ -218,6 +237,7 @@ def automatic_controller(
     process_probe: Callable[[], bool] = dcs_is_running,
     enabled_probe: Callable[[], bool] = automatic_enabled,
     poll_seconds: float = 2.0,
+    stop_requested: Callable[[], bool] = lambda: False,
 ) -> int:
     if not enabled_probe():
         return 0
@@ -233,6 +253,11 @@ def automatic_controller(
     except OSError:
         hook_stamp = None
     while True:
+        if stop_requested():
+            if worker is not None:
+                _stop_worker(worker)
+            _state("Not running", "Exited from the notification area.")
+            return 0
         if not enabled_probe():
             if worker is not None:
                 _stop_worker(worker)
@@ -320,15 +345,18 @@ def manual_launch(voice_arguments: Sequence[str]) -> int:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--automatic", action="store_true", help="wait for DCS at Windows sign-in")
+    parser.add_argument("--automatic", action="store_true", help="run the DCS watcher at Windows sign-in")
+    parser.add_argument("--tray", action="store_true", help="run the DCS watcher in the notification area")
     args, voice_arguments = parser.parse_known_args(argv)
     with single_instance() as acquired:
         if not acquired:
             if sys.stdout is not None:
                 print("DCS Radio Voice Control is already running.")
             return 0
-        if args.automatic:
-            return automatic_controller()
+        if args.automatic or args.tray:
+            from .tray import run_tray
+
+            return run_tray(automatic=args.automatic)
         return manual_launch(voice_arguments)
 
 

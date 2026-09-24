@@ -23,16 +23,16 @@ class ConfigurationUiTests(unittest.TestCase):
             "Audio feedback",
             "Windows integration",
             "Create a Desktop shortcut",
-            "Start DCS Radio Voice Control with Windows",
+            "Start when DCS starts",
             "Test accepted cue",
-            "Save configuration and start",
+            "Save configuration and close",
             "__TOKEN__",
-            "__START_AFTER_SAVE__",
+            "__CLOSE_AFTER_SAVE__",
         ):
             self.assertIn(label, PAGE)
         self.assertIn("X-DCS-Radio-Voice-Control-Token", PAGE)
         self.assertNotIn("X-DCS Radio Voice Control-Token", PAGE)
-        self.assertIn("startAfterSave?'/api/settings/start':'/api/settings'", PAGE)
+        self.assertIn("closeAfterSave?'/api/settings/close':'/api/settings'", PAGE)
         self.assertIn("desktop_shortcut:$('desktopShortcut').checked", PAGE)
 
 

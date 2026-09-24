@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Build the stable, end-user DCS Radio Voice Control ZIP."""
+"""Build the legacy developer/debug DCS Radio Voice Control ZIP.
+
+The supported end-user distribution is the Inno Setup executable built from
+installer/DCSRadioVoiceControl.iss.
+"""
 
 from __future__ import annotations
 
@@ -15,6 +19,8 @@ ROOT_FILES = (
     "README.md",
     "configuration.bat",
     "install.bat",
+    "maintenance.ps1",
+    "repair.bat",
     "run.bat",
     "setup-stt.bat",
     "setup-stt.ps1",
@@ -30,6 +36,7 @@ TREE_PATTERNS = (
     "tools/__init__.py",
     "tools/build_radio_overlay.py",
     "tools/install.py",
+    "tools/purge-local.ps1",
 )
 ZIP_TIMESTAMP = (2026, 1, 1, 0, 0, 0)
 ARCHIVE_ROOT = "DCS-Radio-Voice-Control"
@@ -70,7 +77,7 @@ def main() -> int:
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("dist/DCS-Radio-Voice-Control.zip"),
+        default=Path("dist/DCS-Radio-Voice-Control-developer.zip"),
     )
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]

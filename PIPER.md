@@ -1,8 +1,6 @@
 # Piper speech in DCS Radio Voice Control
 
-DCS Radio Voice Control uses the pinned standalone Piper Windows executable and the
-`en_GB-alan-medium` voice. Setup downloads both from their upstream open-source releases
-and verifies them before use.
+DRVC uses the pinned standalone Piper Windows release `2023.11.14-2` and the `en_GB-alan-medium` voice. Setup downloads the pinned assets and verifies them before use; the Piper Windows archive is checked against its pinned SHA-256.
 
 The live path is entirely in memory:
 
@@ -10,15 +8,8 @@ The live path is entirely in memory:
 response text -> piper.exe --output-raw -> PCM memory -> pygame-ce/SDL -> selected output
 ```
 
-Piper runs once per response so an utterance has an unambiguous end. Synthesis runs on a
-background thread. Pressing PTT terminates an active Piper process, stops SDL playback, and
-discards the interrupted PCM before microphone capture starts.
+Piper runs once per response. Synthesis is performed on a background thread; pressing PTT terminates active speech/playback before microphone capture starts.
 
-DCS Radio Voice Control does not override Piper's length scale, sentence silence, or other voice controls;
-Alan uses the model's native synthesis settings. SDL's logical mixer format is locked to the
-model's sample rate, and SDL converts to the output hardware without reinterpreting the PCM
-at a higher rate.
+DRVC uses the voice model's native synthesis settings. The configuration page exposes the output device and a voice test.
 
-The configuration page exposes the output device and a voice test. The model and
-configuration files remain under `models\piper`; the executable remains under
-`tools\piper`. No Python package, cloud request, or temporary WAV is involved.
+Within the installed application, the executable is under `tools\piper` and the Alan model/configuration are under `models\piper`. No Python Piper package, cloud speech request or temporary WAV file is used.
