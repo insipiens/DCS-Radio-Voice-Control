@@ -71,7 +71,7 @@ A failed download, validation, replacement or cancelled privilege request must n
 
 ## Shortcuts and startup
 
-The installer owns the Start-menu shortcuts. Configuration owns the optional canonical Desktop shortcut and user-level startup registration.
+The installer owns the Start-menu shortcuts. Configuration owns the optional canonical Desktop shortcut and user-level startup registration. That registration starts a visible notification-area controller at sign-in; the controller waits for DCS and starts voice control only when DCS and its current radio interface are ready.
 
 No elevation is required for these operations.
 
