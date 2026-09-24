@@ -46,7 +46,7 @@ Direct commands execute a complete live command without navigating the menu firs
 
 > “Show F10”
 
-Once a guided menu is visible, say the displayed option or its bare function key. Bare `F1`–`F10` are relative to the visible menu; `Show F1`–`Show F10` start from the root radio menu. `Previous Menu`/`F11` goes back and `Exit Menu`/`F12` closes the menu.
+When a guided menu opens, the app reads its immediate choices. Say either the visible label (for example, `ATC`) or its bare function key (for example, `F5`) to select it. A submenu opens; a leaf option executes. Trailing menu dots are ignored, but extra words such as `Go F5` are not selection syntax. `Repeat` reads the current menu again. Bare `F1`–`F10` refer to the displayed menu; `Show F1`–`Show F10` open a root menu without executing an option. `Back`/`F11` goes to the previous menu and `Exit`/`F12` closes it. A complete direct command, such as `Two, Rejoin`, takes precedence over the guided choice when it passes the normal matching gate. Ambiguous or weak matches are rejected.
 
 Aliases can make DCS terminology more natural. For example, `Two, Rejoin` can resolve to `Wingman > Rejoin Formation` without bypassing command matching.
 

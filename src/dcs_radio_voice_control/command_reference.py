@@ -51,6 +51,14 @@ class MenuNavigation:
     choices: tuple[str, ...] = ()
 
 
+@dataclass(frozen=True, slots=True)
+class GuidedSelection:
+    status: str
+    item: MenuItem | None = None
+    choices: tuple[str, ...] = ()
+    scores: tuple[tuple[str, float], ...] = ()
+
+
 def _normalise(text: str) -> str:
     text = unicodedata.normalize("NFKD", text).casefold()
     return " ".join(re.findall(r"[a-z0-9]+", text))
@@ -126,6 +134,54 @@ def function_key_item(
         and item.path[: len(current_path)] == current_path
     )
     return candidates[0] if len(candidates) == 1 else None
+
+
+def visible_menu_items(
+    items: tuple[MenuItem, ...], current_path: tuple[str, ...]
+) -> tuple[MenuItem, ...]:
+    return tuple(
+        item for item in items
+        if len(item.path) == len(current_path) + 1
+        and item.path[: len(current_path)] == current_path
+    )
+
+
+def resolve_guided_selection(
+    items: tuple[MenuItem, ...], current_path: tuple[str, ...], transcript: str
+) -> GuidedSelection:
+    """Match one complete utterance to one immediate visible option."""
+    choices = visible_menu_items(items, current_path)
+    slot = parse_function_key(transcript)
+    if slot is not None:
+        target = function_key_item(items, current_path, slot)
+        return GuidedSelection("found", target) if target else GuidedSelection("not_found")
+
+    wanted = _compact(transcript)
+    if not wanted:
+        return GuidedSelection("not_found")
+    exact = tuple(item for item in choices if _compact(item.label) == wanted)
+    if len(exact) == 1:
+        return GuidedSelection("found", exact[0])
+    if len(exact) > 1:
+        return GuidedSelection("ambiguous", choices=tuple(item.label for item in exact))
+
+    ranked = sorted(
+        (
+            (SequenceMatcher(None, _normalise(transcript), _normalise(item.label)).ratio(), item)
+            for item in choices
+        ),
+        key=lambda entry: (-entry[0], entry[1].action_id),
+    )
+    scores = tuple((item.label, round(score, 4)) for score, item in ranked[:5])
+    if not ranked or ranked[0][0] < _MINIMUM_NODE_SCORE:
+        return GuidedSelection("not_found", scores=scores)
+    best = ranked[0][0]
+    contenders = tuple(item for score, item in ranked if best - score < _MINIMUM_NODE_LEAD)
+    if len(contenders) > 1:
+        return GuidedSelection(
+            "ambiguous", choices=tuple(item.label for item in contenders), scores=scores
+        )
+    return GuidedSelection("found", ranked[0][1], scores=scores)
 
 
 def _menu_nodes(items: tuple[MenuItem, ...]) -> dict[tuple[str, ...], tuple[str, ...]]:

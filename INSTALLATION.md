@@ -63,7 +63,7 @@ A direct command such as `Flight, Cover Me` is resolved against the complete liv
 
 `List` speaks the immediate choices without changing the DCS menu.
 
-`Show` starts guided navigation at a named/root menu. `Show ATC`, `Show Flight` and `Show F1`–`Show F10` are absolute requests from the root radio menu. Once a guided menu is visible, bare `F1`–`F10` and spoken option names select from that visible menu. `Previous Menu`/`F11` goes back; `Exit Menu`/`F12` closes it.
+`Show` starts guided navigation at a named/root menu. `Show ATC`, `Show Flight` and `Show F1`–`Show F10` are absolute visual requests. The app reads the immediate options of the displayed menu. Say either a bare `F1`–`F10` key or the visible option name to enter its submenu or execute its leaf command. Menu punctuation such as `ATC....` is ignored; wrapper phrases such as `Go F5` are not guided selections. `Repeat` reads the current choices again. `Back`/`F11` goes back; `Exit`/`F12` closes the menu. A safe direct command takes precedence while a guided menu is open.
 
 Recipient aliases such as `Two` → `Wingman` restrict matching to the corresponding live subtree; they do not contribute matching confidence by themselves. Action aliases can then resolve inside that subtree, for example `Two, Rejoin`.
 

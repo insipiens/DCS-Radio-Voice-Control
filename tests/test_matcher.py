@@ -331,6 +331,18 @@ class MatcherTests(unittest.TestCase):
         self.assertTrue(direct)
         self.assertEqual(candidate.item.action_id, "radio.1.4.2")  # type: ignore[union-attr]
 
+    def test_direct_rejoin_takes_precedence_over_visible_formation(self) -> None:
+        items = ITEMS + (
+            MenuItem("menu.formation", "Formation", ("Wingman", "Formation"), False, 5),
+            MenuItem("rejoin", "Rejoin Formation", ("Wingman", "Rejoin Formation")),
+        )
+        match, candidate, direct = execution_match_for_context(
+            "Wingman, Rejoin Formation", items, ("Wingman",), None
+        )
+        self.assertTrue(direct)
+        self.assertIsNotNone(candidate)
+        self.assertEqual(candidate.item.action_id, "rejoin")  # type: ignore[union-attr]
+
     def test_guided_context_remains_fallback_for_ambiguous_leaf(self) -> None:
         match, candidate, direct = execution_match_for_context(
             "Break left",

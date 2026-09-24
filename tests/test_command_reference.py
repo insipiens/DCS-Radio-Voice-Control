@@ -9,9 +9,11 @@ from dcs_radio_voice_control.command_reference import (
     parse_function_key,
     parse_meta_command,
     resolve_menu_navigation,
+    resolve_guided_selection,
     spoken_listing,
 )
 from dcs_radio_voice_control.protocol import MenuItem
+from dcs_radio_voice_control.voice_command_test import guided_menu_announcement
 
 
 ITEMS = (
@@ -103,6 +105,41 @@ class CommandReferenceTests(unittest.TestCase):
         self.assertIsNotNone(nested)
         self.assertEqual(nested.path, ("ATC", "Tangmere"))  # type: ignore[union-attr]
         self.assertIsNone(function_key_item(NAVIGATION_ITEMS, ("Other",), 5))
+
+    def test_guided_label_or_key_selects_only_immediate_visible_choice(self) -> None:
+        items = NAVIGATION_ITEMS + (
+            MenuItem("leaf.1", "Startup", ("ATC", "Ford", "Startup"), slot=1),
+        )
+        self.assertEqual(resolve_guided_selection(items, (), "F5").item.path, ("ATC",))  # type: ignore[union-attr]
+        self.assertEqual(resolve_guided_selection(items, (), "ATC").item.path, ("ATC",))  # type: ignore[union-attr]
+        self.assertEqual(resolve_guided_selection(items, ("ATC",), "Ford").item.path, ("ATC", "Ford"))  # type: ignore[union-attr]
+        self.assertEqual(resolve_guided_selection(items, ("ATC", "Ford"), "F1").item.action_id, "leaf.1")  # type: ignore[union-attr]
+        self.assertEqual(resolve_guided_selection(items, ("Other",), "ATC").status, "not_found")
+
+    def test_guided_label_ignores_visual_trailing_dots_but_not_extra_words(self) -> None:
+        items = (MenuItem("menu.atc", "ATC....", ("ATC....",), False, 5),)
+        self.assertEqual(resolve_guided_selection(items, (), "ATC").item, items[0])
+        for phrase in ("Go F5", "Show ATC", "Go ATC", "APC"):
+            with self.subTest(phrase=phrase):
+                self.assertEqual(resolve_guided_selection(items, (), phrase).status, "not_found")
+
+    def test_guided_fuzzy_match_requires_a_unique_lead(self) -> None:
+        items = (
+            MenuItem("one", "Formation", ("Formation",), False, 1),
+            MenuItem("two", "Formations", ("Formations",), False, 2),
+        )
+        selection = resolve_guided_selection(items, (), "Formationn")
+        self.assertEqual(selection.status, "ambiguous")
+        self.assertEqual(len(selection.choices), 2)
+
+    def test_guided_announcement_lists_only_visible_choices(self) -> None:
+        items = NAVIGATION_ITEMS + (
+            MenuItem("menu.flight", "Flight....", ("Flight",), False, 2),
+        )
+        self.assertEqual(
+            guided_menu_announcement(items, ()),
+            "Radio menu. F 5: ATC. F 10: Other. F 2: Flight.",
+        )
 
     def test_lists_immediate_children_only(self) -> None:
         listing = list_node_children(ITEMS, "ATC")
