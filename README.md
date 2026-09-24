@@ -10,7 +10,7 @@ DCS Radio Voice Control operates the live DCS radio menu by voice. Hold push-to-
 - HOTAS or keyboard push-to-talk.
 - Local Whisper speech recognition and Piper speech output.
 - Configurable aliases, microphone, audio output and matching thresholds.
-- Optional Desktop shortcut and Start when DCS starts.
+- Optional Desktop shortcut and visible notification-area controller that starts voice control when DCS becomes active.
 
 ## Install
 
@@ -22,7 +22,7 @@ Requires Windows 11 x64 and DCS World.
 2. Run `DCS-Radio-Voice-Control-Setup.exe`.
 3. Read the DCS integration notice and choose **Install**.
 4. Setup installs DRVC for your Windows account and downloads/verifies its private Python, Whisper and Piper components. Approve Windows elevation only when the protected DCS radio-menu file needs changing.
-5. On the final page, leave **Configure DCS Radio Voice Control** selected. Choose your microphone, audio output and PTT button, then **Save configuration and close**.
+5. On the final page, leave **Configure DCS Radio Voice Control** selected. Choose your microphone, audio output and PTT button, then **Save configuration and close**. Setup starts the separate notification-area controller; you may close the browser tab.
 
 The program is installed under `%LOCALAPPDATA%\Programs\DCS Radio Voice Control`. User configuration and aliases are kept separately under `%LOCALAPPDATA%\DCSRadioVoiceControl`.
 
@@ -52,15 +52,19 @@ Aliases can make DCS terminology more natural. For example, `Two, Rejoin` can re
 
 ## Configuration
 
-Open **Start > DCS Radio Voice Control > Configure DCS Radio Voice Control**. Configuration controls the microphone, audio output, HOTAS/PTT, Whisper model, matching thresholds, feedback, Desktop shortcut and Start when DCS starts.
+Open **Start > DCS Radio Voice Control > Configure DCS Radio Voice Control**. Configuration controls the microphone, audio output, HOTAS/PTT, Whisper model, matching thresholds, feedback, Desktop shortcut and Start when DCS starts. This option starts a visible controller at Windows sign-in; it waits for DCS, then starts voice control when the current radio interface is ready.
 
 ## Updating
 
-Close DRVC and [download the current development Setup EXE](https://github.com/insipiens/DCS-Radio-Voice-Control/releases/download/development-installer/DCS-Radio-Voice-Control-Setup.exe), then run it. The stable installer identity updates the existing installation in place. Valid unchanged runtime, Whisper and Piper components are reused; configuration, PTT settings and aliases are preserved.
+Exit the notification-area controller, close DCS, then [download the current development Setup EXE](https://github.com/insipiens/DCS-Radio-Voice-Control/releases/download/development-installer/DCS-Radio-Voice-Control-Setup.exe), then run it. The stable installer identity updates the existing installation in place. Valid unchanged runtime, Whisper and Piper components are reused; configuration, PTT settings and aliases are preserved.
 
 ## Repair
 
-Open **Start > DCS Radio Voice Control > Repair DCS Radio Voice Control**. Repair verifies the managed components and DCS integration and replaces only items that can be safely identified. It stops rather than overwriting an unexpected DCS radio-menu file.
+Close DCS, then choose **Repair** from the notification-area menu or open **Start > DCS Radio Voice Control > Repair DCS Radio Voice Control**. Repair verifies the managed components and DCS integration and replaces only items that can be safely identified. It stops rather than overwriting an unexpected DCS radio-menu file.
+
+## Notification-area controller
+
+When the controller is running, its icon is visible in the Windows notification area. Left-click it for the current state. Right-click it for **Open runtime log**, **Configure**, **Repair**, **Download update**, and **Exit**.
 
 ## Uninstall
 
